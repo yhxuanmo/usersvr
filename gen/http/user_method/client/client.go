@@ -43,6 +43,10 @@ type Client struct {
 	// endpoint.
 	ChangeEmailDoer goahttp.Doer
 
+	// SendVerifyCode Doer is the HTTP client used to make requests to the
+	// sendVerifyCode endpoint.
+	SendVerifyCodeDoer goahttp.Doer
+
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
 	RestoreResponseBody bool
@@ -70,6 +74,7 @@ func NewClient(
 		ChangePasswordDoer:  doer,
 		ForgotPasswordDoer:  doer,
 		ChangeEmailDoer:     doer,
+		SendVerifyCodeDoer:  doer,
 		RestoreResponseBody: restoreBody,
 		scheme:              scheme,
 		host:                host,
@@ -248,6 +253,31 @@ func (c *Client) ChangeEmail() goa.Endpoint {
 
 		if err != nil {
 			return nil, goahttp.ErrRequestError("userMethod", "changeEmail", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// SendVerifyCode returns an endpoint that makes HTTP requests to the
+// userMethod service sendVerifyCode server.
+func (c *Client) SendVerifyCode() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeSendVerifyCodeRequest(c.encoder)
+		decodeResponse = DecodeSendVerifyCodeResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildSendVerifyCodeRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.SendVerifyCodeDoer.Do(req)
+
+		if err != nil {
+			return nil, goahttp.ErrRequestError("userMethod", "sendVerifyCode", err)
 		}
 		return decodeResponse(resp)
 	}

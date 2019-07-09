@@ -175,9 +175,16 @@ func DecodeLoginRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.D
 // userMethod changeInfo endpoint.
 func EncodeChangeInfoResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res := v.(string)
+		res := v.(*usermethodviews.UserInfo)
+		w.Header().Set("goa-view", res.View)
 		enc := encoder(ctx, w)
-		body := res
+		var body interface{}
+		switch res.View {
+		case "default", "":
+			body = NewChangeInfoResponseBody(res.Projected)
+		case "changeInfo":
+			body = NewChangeInfoResponseBodyChangeInfo(res.Projected)
+		}
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
@@ -202,7 +209,23 @@ func DecodeChangeInfoRequest(mux goahttp.Muxer, decoder func(*http.Request) goah
 		if err != nil {
 			return nil, err
 		}
-		payload := NewChangeInfoUser(&body)
+
+		var (
+			token string
+		)
+		token = r.Header.Get("Authorization")
+		if token == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("Authorization", "header"))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewChangeInfoPayload(&body, token)
+		if strings.Contains(payload.Token, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Token, " ", 2)[1]
+			payload.Token = cred
+		}
 
 		return payload, nil
 	}
@@ -212,8 +235,11 @@ func DecodeChangeInfoRequest(mux goahttp.Muxer, decoder func(*http.Request) goah
 // the userMethod changePassword endpoint.
 func EncodeChangePasswordResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res := v.(*usermethod.ResponseResult)
+		enc := encoder(ctx, w)
+		body := NewChangePasswordResponseBody(res)
 		w.WriteHeader(http.StatusOK)
-		return nil
+		return enc.Encode(body)
 	}
 }
 
@@ -236,7 +262,23 @@ func DecodeChangePasswordRequest(mux goahttp.Muxer, decoder func(*http.Request) 
 		if err != nil {
 			return nil, err
 		}
-		payload := NewChangePasswordPayload(&body)
+
+		var (
+			token string
+		)
+		token = r.Header.Get("Authorization")
+		if token == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("Authorization", "header"))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewChangePasswordPayload(&body, token)
+		if strings.Contains(payload.Token, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Token, " ", 2)[1]
+			payload.Token = cred
+		}
 
 		return payload, nil
 	}
@@ -246,8 +288,11 @@ func DecodeChangePasswordRequest(mux goahttp.Muxer, decoder func(*http.Request) 
 // the userMethod forgotPassword endpoint.
 func EncodeForgotPasswordResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res := v.(*usermethod.ResponseResult)
+		enc := encoder(ctx, w)
+		body := NewForgotPasswordResponseBody(res)
 		w.WriteHeader(http.StatusOK)
-		return nil
+		return enc.Encode(body)
 	}
 }
 
@@ -280,9 +325,9 @@ func DecodeForgotPasswordRequest(mux goahttp.Muxer, decoder func(*http.Request) 
 // userMethod changeEmail endpoint.
 func EncodeChangeEmailResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res := v.(string)
+		res := v.(*usermethod.ResponseResult)
 		enc := encoder(ctx, w)
-		body := res
+		body := NewChangeEmailResponseBody(res)
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
@@ -307,7 +352,60 @@ func DecodeChangeEmailRequest(mux goahttp.Muxer, decoder func(*http.Request) goa
 		if err != nil {
 			return nil, err
 		}
-		payload := NewChangeEmailPayload(&body)
+
+		var (
+			token string
+		)
+		token = r.Header.Get("Authorization")
+		if token == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("Authorization", "header"))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewChangeEmailPayload(&body, token)
+		if strings.Contains(payload.Token, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Token, " ", 2)[1]
+			payload.Token = cred
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeSendVerifyCodeResponse returns an encoder for responses returned by
+// the userMethod sendVerifyCode endpoint.
+func EncodeSendVerifyCodeResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res := v.(*usermethod.ResponseResult)
+		enc := encoder(ctx, w)
+		body := NewSendVerifyCodeResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeSendVerifyCodeRequest returns a decoder for requests sent to the
+// userMethod sendVerifyCode endpoint.
+func DecodeSendVerifyCodeRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			body SendVerifyCodeRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if err == io.EOF {
+				return nil, goa.MissingPayloadError()
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateSendVerifyCodeRequestBody(&body)
+		if err != nil {
+			return nil, err
+		}
+		payload := NewSendVerifyCodePayload(&body)
 
 		return payload, nil
 	}

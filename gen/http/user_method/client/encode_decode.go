@@ -272,10 +272,11 @@ func (c *Client) BuildChangeInfoRequest(ctx context.Context, v interface{}) (*ht
 // userMethod changeInfo server.
 func EncodeChangeInfoRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
 	return func(req *http.Request, v interface{}) error {
-		p, ok := v.(*usermethod.User)
+		p, ok := v.(*usermethod.ChangeInfoPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("userMethod", "changeInfo", "*usermethod.User", v)
+			return goahttp.ErrInvalidType("userMethod", "changeInfo", "*usermethod.ChangeInfoPayload", v)
 		}
+		req.Header.Set("Authorization", p.Token)
 		body := NewChangeInfoRequestBody(p)
 		if err := encoder(req).Encode(&body); err != nil {
 			return goahttp.ErrEncodingError("userMethod", "changeInfo", err)
@@ -304,14 +305,21 @@ func DecodeChangeInfoResponse(decoder func(*http.Response) goahttp.Decoder, rest
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body string
+				body ChangeInfoResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("userMethod", "changeInfo", err)
 			}
-			return body, nil
+			p := NewChangeInfoUserInfoOK(&body)
+			view := resp.Header.Get("goa-view")
+			vres := &usermethodviews.UserInfo{p, view}
+			if err = usermethodviews.ValidateUserInfo(vres); err != nil {
+				return nil, goahttp.ErrValidationError("userMethod", "changeInfo", err)
+			}
+			res := usermethod.NewUserInfo(vres)
+			return res, nil
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("userMethod", "changeInfo", resp.StatusCode, string(body))
@@ -342,6 +350,7 @@ func EncodeChangePasswordRequest(encoder func(*http.Request) goahttp.Encoder) fu
 		if !ok {
 			return goahttp.ErrInvalidType("userMethod", "changePassword", "*usermethod.ChangePasswordPayload", v)
 		}
+		req.Header.Set("Authorization", p.Token)
 		body := NewChangePasswordRequestBody(p)
 		if err := encoder(req).Encode(&body); err != nil {
 			return goahttp.ErrEncodingError("userMethod", "changePassword", err)
@@ -369,7 +378,20 @@ func DecodeChangePasswordResponse(decoder func(*http.Response) goahttp.Decoder, 
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
-			return nil, nil
+			var (
+				body ChangePasswordResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userMethod", "changePassword", err)
+			}
+			err = ValidateChangePasswordResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userMethod", "changePassword", err)
+			}
+			res := NewChangePasswordResponseResultOK(&body)
+			return res, nil
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("userMethod", "changePassword", resp.StatusCode, string(body))
@@ -427,7 +449,20 @@ func DecodeForgotPasswordResponse(decoder func(*http.Response) goahttp.Decoder, 
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
-			return nil, nil
+			var (
+				body ForgotPasswordResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userMethod", "forgotPassword", err)
+			}
+			err = ValidateForgotPasswordResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userMethod", "forgotPassword", err)
+			}
+			res := NewForgotPasswordResponseResultOK(&body)
+			return res, nil
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("userMethod", "forgotPassword", resp.StatusCode, string(body))
@@ -458,6 +493,7 @@ func EncodeChangeEmailRequest(encoder func(*http.Request) goahttp.Encoder) func(
 		if !ok {
 			return goahttp.ErrInvalidType("userMethod", "changeEmail", "*usermethod.ChangeEmailPayload", v)
 		}
+		req.Header.Set("Authorization", p.Token)
 		body := NewChangeEmailRequestBody(p)
 		if err := encoder(req).Encode(&body); err != nil {
 			return goahttp.ErrEncodingError("userMethod", "changeEmail", err)
@@ -486,17 +522,93 @@ func DecodeChangeEmailResponse(decoder func(*http.Response) goahttp.Decoder, res
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body string
+				body ChangeEmailResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("userMethod", "changeEmail", err)
 			}
-			return body, nil
+			err = ValidateChangeEmailResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userMethod", "changeEmail", err)
+			}
+			res := NewChangeEmailResponseResultOK(&body)
+			return res, nil
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("userMethod", "changeEmail", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildSendVerifyCodeRequest instantiates a HTTP request object with method
+// and path set to call the "userMethod" service "sendVerifyCode" endpoint
+func (c *Client) BuildSendVerifyCodeRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: SendVerifyCodeUserMethodPath()}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("userMethod", "sendVerifyCode", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeSendVerifyCodeRequest returns an encoder for requests sent to the
+// userMethod sendVerifyCode server.
+func EncodeSendVerifyCodeRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*usermethod.SendVerifyCodePayload)
+		if !ok {
+			return goahttp.ErrInvalidType("userMethod", "sendVerifyCode", "*usermethod.SendVerifyCodePayload", v)
+		}
+		body := NewSendVerifyCodeRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("userMethod", "sendVerifyCode", err)
+		}
+		return nil
+	}
+}
+
+// DecodeSendVerifyCodeResponse returns a decoder for responses returned by the
+// userMethod sendVerifyCode endpoint. restoreBody controls whether the
+// response body should be restored after having been read.
+func DecodeSendVerifyCodeResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body SendVerifyCodeResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userMethod", "sendVerifyCode", err)
+			}
+			err = ValidateSendVerifyCodeResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userMethod", "sendVerifyCode", err)
+			}
+			res := NewSendVerifyCodeResponseResultOK(&body)
+			return res, nil
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("userMethod", "sendVerifyCode", resp.StatusCode, string(body))
 		}
 	}
 }

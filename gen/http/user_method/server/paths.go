@@ -41,3 +41,8 @@ func ForgotPasswordUserMethodPath() string {
 func ChangeEmailUserMethodPath() string {
 	return "/user/change/email"
 }
+
+// SendVerifyCodeUserMethodPath returns the URL path to the userMethod service sendVerifyCode HTTP endpoint.
+func SendVerifyCodeUserMethodPath() string {
+	return "/user/send/code"
+}

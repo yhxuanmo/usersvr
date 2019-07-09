@@ -26,6 +26,7 @@ type Server struct {
 	ChangePassword http.Handler
 	ForgotPassword http.Handler
 	ChangeEmail    http.Handler
+	SendVerifyCode http.Handler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -62,6 +63,7 @@ func New(
 			{"ChangePassword", "POST", "/user/change/password"},
 			{"ForgotPassword", "POST", "/user/forgot/password"},
 			{"ChangeEmail", "POST", "/user/change/email"},
+			{"SendVerifyCode", "POST", "/user/send/code"},
 		},
 		Register:       NewRegisterHandler(e.Register, mux, dec, enc, eh),
 		Show:           NewShowHandler(e.Show, mux, dec, enc, eh),
@@ -70,6 +72,7 @@ func New(
 		ChangePassword: NewChangePasswordHandler(e.ChangePassword, mux, dec, enc, eh),
 		ForgotPassword: NewForgotPasswordHandler(e.ForgotPassword, mux, dec, enc, eh),
 		ChangeEmail:    NewChangeEmailHandler(e.ChangeEmail, mux, dec, enc, eh),
+		SendVerifyCode: NewSendVerifyCodeHandler(e.SendVerifyCode, mux, dec, enc, eh),
 	}
 }
 
@@ -85,6 +88,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.ChangePassword = m(s.ChangePassword)
 	s.ForgotPassword = m(s.ForgotPassword)
 	s.ChangeEmail = m(s.ChangeEmail)
+	s.SendVerifyCode = m(s.SendVerifyCode)
 }
 
 // Mount configures the mux to serve the userMethod endpoints.
@@ -96,6 +100,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountChangePasswordHandler(mux, h.ChangePassword)
 	MountForgotPasswordHandler(mux, h.ForgotPassword)
 	MountChangeEmailHandler(mux, h.ChangeEmail)
+	MountSendVerifyCodeHandler(mux, h.SendVerifyCode)
 }
 
 // MountRegisterHandler configures the mux to serve the "userMethod" service
@@ -439,6 +444,58 @@ func NewChangeEmailHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "changeEmail")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "userMethod")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				eh(ctx, w, err)
+			}
+			return
+		}
+
+		res, err := endpoint(ctx, payload)
+
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				eh(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			eh(ctx, w, err)
+		}
+	})
+}
+
+// MountSendVerifyCodeHandler configures the mux to serve the "userMethod"
+// service "sendVerifyCode" endpoint.
+func MountSendVerifyCodeHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/user/send/code", f)
+}
+
+// NewSendVerifyCodeHandler creates a HTTP handler which loads the HTTP request
+// and calls the "userMethod" service "sendVerifyCode" endpoint.
+func NewSendVerifyCodeHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	dec func(*http.Request) goahttp.Decoder,
+	enc func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	eh func(context.Context, http.ResponseWriter, error),
+) http.Handler {
+	var (
+		decodeRequest  = DecodeSendVerifyCodeRequest(mux, dec)
+		encodeResponse = EncodeSendVerifyCodeResponse(enc)
+		encodeError    = goahttp.ErrorEncoder(enc)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "sendVerifyCode")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "userMethod")
 		payload, err := decodeRequest(r)
 		if err != nil {

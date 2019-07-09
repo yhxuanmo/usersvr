@@ -26,15 +26,20 @@ type Service interface {
 	// Creates a valid JWT
 	Login(context.Context, *LoginPayload) (res *Creds, err error)
 	// Add new bottle and return its ID.
-	ChangeInfo(context.Context, *User) (res string, err error)
+	// The "view" return value must have one of the following views
+	//	- "default"
+	//	- "changeInfo"
+	ChangeInfo(context.Context, *ChangeInfoPayload) (res *UserInfo, view string, err error)
 	// Remove bottle from storage
-	ChangePassword(context.Context, *ChangePasswordPayload) (err error)
+	ChangePassword(context.Context, *ChangePasswordPayload) (res *ResponseResult, err error)
 	// Rate bottles by IDs
-	ForgotPassword(context.Context, *ForgotPasswordPayload) (err error)
+	ForgotPassword(context.Context, *ForgotPasswordPayload) (res *ResponseResult, err error)
 	// Add n number of bottles and return their IDs. This is a multipart request
 	// and each part has field name 'bottle' and contains the encoded bottle info
 	// to be added.
-	ChangeEmail(context.Context, *ChangeEmailPayload) (res string, err error)
+	ChangeEmail(context.Context, *ChangeEmailPayload) (res *ResponseResult, err error)
+	// send verify code to email
+	SendVerifyCode(context.Context, *SendVerifyCodePayload) (res *ResponseResult, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -51,7 +56,7 @@ const ServiceName = "userMethod"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [7]string{"register", "show", "login", "changeInfo", "changePassword", "forgotPassword", "changeEmail"}
+var MethodNames = [8]string{"register", "show", "login", "changeInfo", "changePassword", "forgotPassword", "changeEmail", "sendVerifyCode"}
 
 // RegisterPayload is the payload type of the userMethod service register
 // method.
@@ -106,19 +111,22 @@ type Creds struct {
 	JWT string
 }
 
-// User is the payload type of the userMethod service changeInfo method.
-type User struct {
-	// Name of bottle
+// ChangeInfoPayload is the payload type of the userMethod service changeInfo
+// method.
+type ChangeInfoPayload struct {
+	// JWT used for authentication
+	Token string
+	// name of user
 	Name string
-	// Vintage of bottle
-	Email string
-	// Description of bottle
+	// icon of user
 	Icon string
 }
 
 // ChangePasswordPayload is the payload type of the userMethod service
 // changePassword method.
 type ChangePasswordPayload struct {
+	// JWT used for authentication
+	Token string
 	// old password
 	OldPassword string
 	// new password
@@ -130,11 +138,20 @@ type ChangePasswordPayload struct {
 type ForgotPasswordPayload struct {
 	Code        string
 	NewPassword string
+	Email       string
 }
 
 // ChangeEmailPayload is the payload type of the userMethod service changeEmail
 // method.
 type ChangeEmailPayload struct {
+	// JWT used for authentication
+	Token string
+	Email string
+}
+
+// SendVerifyCodePayload is the payload type of the userMethod service
+// sendVerifyCode method.
+type SendVerifyCodePayload struct {
 	Email string
 }
 

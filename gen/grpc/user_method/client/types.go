@@ -100,19 +100,27 @@ func NewLoginResult(message *user_methodpb.LoginResponse) *usermethod.Creds {
 
 // NewChangeInfoRequest builds the gRPC request type from the payload of the
 // "changeInfo" endpoint of the "userMethod" service.
-func NewChangeInfoRequest(payload *usermethod.User) *user_methodpb.ChangeInfoRequest {
+func NewChangeInfoRequest(payload *usermethod.ChangeInfoPayload) *user_methodpb.ChangeInfoRequest {
 	message := &user_methodpb.ChangeInfoRequest{
-		Name:  payload.Name,
-		Email: payload.Email,
-		Icon:  payload.Icon,
+		Name: payload.Name,
+		Icon: payload.Icon,
 	}
 	return message
 }
 
 // NewChangeInfoResult builds the result type of the "changeInfo" endpoint of
 // the "userMethod" service from the gRPC response type.
-func NewChangeInfoResult(message *user_methodpb.ChangeInfoResponse) string {
-	result := message.Field
+func NewChangeInfoResult(message *user_methodpb.ChangeInfoResponse) *usermethodviews.UserInfoView {
+	result := &usermethodviews.UserInfoView{
+		Name:  &message.Name,
+		Email: &message.Email,
+		Icon:  &message.Icon,
+	}
+	idptr := int(message.Id)
+	result.ID = &idptr
+	if message.Password != "" {
+		result.Password = &message.Password
+	}
 	return result
 }
 
@@ -126,14 +134,55 @@ func NewChangePasswordRequest(payload *usermethod.ChangePasswordPayload) *user_m
 	return message
 }
 
+// NewChangePasswordResult builds the result type of the "changePassword"
+// endpoint of the "userMethod" service from the gRPC response type.
+func NewChangePasswordResult(message *user_methodpb.ChangePasswordResponse) *usermethod.ResponseResult {
+	result := &usermethod.ResponseResult{
+		Code: int(message.Code),
+	}
+	if message.Message_ != "" {
+		result.Message = &message.Message_
+	}
+	if message.Data != nil {
+		result.Data = make(map[string]string, len(message.Data))
+		for key, val := range message.Data {
+			tk := key
+			tv := val
+			result.Data[tk] = tv
+		}
+	}
+	return result
+}
+
 // NewForgotPasswordRequest builds the gRPC request type from the payload of
 // the "forgotPassword" endpoint of the "userMethod" service.
 func NewForgotPasswordRequest(payload *usermethod.ForgotPasswordPayload) *user_methodpb.ForgotPasswordRequest {
 	message := &user_methodpb.ForgotPasswordRequest{
 		Code:        payload.Code,
 		NewPassword: payload.NewPassword,
+		Email:       payload.Email,
 	}
 	return message
+}
+
+// NewForgotPasswordResult builds the result type of the "forgotPassword"
+// endpoint of the "userMethod" service from the gRPC response type.
+func NewForgotPasswordResult(message *user_methodpb.ForgotPasswordResponse) *usermethod.ResponseResult {
+	result := &usermethod.ResponseResult{
+		Code: int(message.Code),
+	}
+	if message.Message_ != "" {
+		result.Message = &message.Message_
+	}
+	if message.Data != nil {
+		result.Data = make(map[string]string, len(message.Data))
+		for key, val := range message.Data {
+			tk := key
+			tv := val
+			result.Data[tk] = tv
+		}
+	}
+	return result
 }
 
 // NewChangeEmailRequest builds the gRPC request type from the payload of the
@@ -147,13 +196,70 @@ func NewChangeEmailRequest(payload *usermethod.ChangeEmailPayload) *user_methodp
 
 // NewChangeEmailResult builds the result type of the "changeEmail" endpoint of
 // the "userMethod" service from the gRPC response type.
-func NewChangeEmailResult(message *user_methodpb.ChangeEmailResponse) string {
-	result := message.Field
+func NewChangeEmailResult(message *user_methodpb.ChangeEmailResponse) *usermethod.ResponseResult {
+	result := &usermethod.ResponseResult{
+		Code: int(message.Code),
+	}
+	if message.Message_ != "" {
+		result.Message = &message.Message_
+	}
+	if message.Data != nil {
+		result.Data = make(map[string]string, len(message.Data))
+		for key, val := range message.Data {
+			tk := key
+			tv := val
+			result.Data[tk] = tv
+		}
+	}
+	return result
+}
+
+// NewSendVerifyCodeRequest builds the gRPC request type from the payload of
+// the "sendVerifyCode" endpoint of the "userMethod" service.
+func NewSendVerifyCodeRequest(payload *usermethod.SendVerifyCodePayload) *user_methodpb.SendVerifyCodeRequest {
+	message := &user_methodpb.SendVerifyCodeRequest{
+		Email: payload.Email,
+	}
+	return message
+}
+
+// NewSendVerifyCodeResult builds the result type of the "sendVerifyCode"
+// endpoint of the "userMethod" service from the gRPC response type.
+func NewSendVerifyCodeResult(message *user_methodpb.SendVerifyCodeResponse) *usermethod.ResponseResult {
+	result := &usermethod.ResponseResult{
+		Code: int(message.Code),
+	}
+	if message.Message_ != "" {
+		result.Message = &message.Message_
+	}
+	if message.Data != nil {
+		result.Data = make(map[string]string, len(message.Data))
+		for key, val := range message.Data {
+			tk := key
+			tv := val
+			result.Data[tk] = tv
+		}
+	}
 	return result
 }
 
 // ValidateShowResponse runs the validations defined on ShowResponse.
 func ValidateShowResponse(message *user_methodpb.ShowResponse) (err error) {
+	if utf8.RuneCountInString(message.Name) > 100 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("message.name", message.Name, utf8.RuneCountInString(message.Name), 100, false))
+	}
+	if utf8.RuneCountInString(message.Email) > 100 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("message.email", message.Email, utf8.RuneCountInString(message.Email), 100, false))
+	}
+	if utf8.RuneCountInString(message.Icon) > 2000 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("message.icon", message.Icon, utf8.RuneCountInString(message.Icon), 2000, false))
+	}
+	return
+}
+
+// ValidateChangeInfoResponse runs the validations defined on
+// ChangeInfoResponse.
+func ValidateChangeInfoResponse(message *user_methodpb.ChangeInfoResponse) (err error) {
 	if utf8.RuneCountInString(message.Name) > 100 {
 		err = goa.MergeErrors(err, goa.InvalidLengthError("message.name", message.Name, utf8.RuneCountInString(message.Name), 100, false))
 	}

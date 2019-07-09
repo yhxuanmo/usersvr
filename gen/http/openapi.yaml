@@ -60,6 +60,11 @@ paths:
         info to be added.
       operationId: userMethod#changeEmail
       parameters:
+      - name: Authorization
+        in: header
+        description: JWT used for authentication
+        required: true
+        type: string
       - name: ChangeEmailRequestBody
         in: body
         required: true
@@ -71,9 +76,13 @@ paths:
         "200":
           description: OK response.
           schema:
-            type: string
+            $ref: '#/definitions/UserMethodChangeEmailResponseBody'
+            required:
+            - code
       schemes:
       - http
+      security:
+      - jwt_header_Authorization: []
   /user/change/info:
     post:
       tags:
@@ -82,6 +91,11 @@ paths:
       description: Add new bottle and return its ID.
       operationId: userMethod#changeInfo
       parameters:
+      - name: Authorization
+        in: header
+        description: JWT used for authentication
+        required: true
+        type: string
       - name: ChangeInfoRequestBody
         in: body
         required: true
@@ -89,15 +103,16 @@ paths:
           $ref: '#/definitions/UserMethodChangeInfoRequestBody'
           required:
           - name
-          - email
           - icon
       responses:
         "200":
           description: OK response.
           schema:
-            type: string
+            $ref: '#/definitions/UserMethodChangeInfoResponseBody'
       schemes:
       - http
+      security:
+      - jwt_header_Authorization: []
   /user/change/password:
     post:
       tags:
@@ -106,6 +121,11 @@ paths:
       description: Remove bottle from storage
       operationId: userMethod#changePassword
       parameters:
+      - name: Authorization
+        in: header
+        description: JWT used for authentication
+        required: true
+        type: string
       - name: ChangePasswordRequestBody
         in: body
         required: true
@@ -113,11 +133,18 @@ paths:
           $ref: '#/definitions/UserMethodChangePasswordRequestBody'
           required:
           - oldPassword
+          - newPassword
       responses:
         "200":
           description: OK response.
+          schema:
+            $ref: '#/definitions/UserMethodChangePasswordResponseBody'
+            required:
+            - code
       schemes:
       - http
+      security:
+      - jwt_header_Authorization: []
   /user/forgot/password:
     post:
       tags:
@@ -133,9 +160,15 @@ paths:
           $ref: '#/definitions/UserMethodForgotPasswordRequestBody'
           required:
           - code
+          - newPassword
+          - email
       responses:
         "200":
           description: OK response.
+          schema:
+            $ref: '#/definitions/UserMethodForgotPasswordResponseBody'
+            required:
+            - code
       schemes:
       - http
   /user/login:
@@ -188,6 +221,30 @@ paths:
             - code
       schemes:
       - http
+  /user/send/code:
+    post:
+      tags:
+      - userMethod
+      summary: sendVerifyCode userMethod
+      description: send verify code to email
+      operationId: userMethod#sendVerifyCode
+      parameters:
+      - name: SendVerifyCodeRequestBody
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserMethodSendVerifyCodeRequestBody'
+          required:
+          - email
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/UserMethodSendVerifyCodeResponseBody'
+            required:
+            - code
+      schemes:
+      - http
 definitions:
   UserMethodChangeEmailRequestBody:
     title: UserMethodChangeEmailRequestBody
@@ -195,19 +252,65 @@ definitions:
     properties:
       email:
         type: string
-        example: Eligendi qui.
+        example: Quasi modi reiciendis quia velit quia.
     example:
-      email: At voluptate molestiae.
+      email: Autem aperiam alias repellat et.
     required:
     - email
+  UserMethodChangeEmailResponseBody:
+    title: UserMethodChangeEmailResponseBody
+    type: object
+    properties:
+      code:
+        type: integer
+        description: code
+        example: 200
+        format: int64
+      data:
+        type: object
+        example:
+          Ab illo voluptatum.: Et laboriosam adipisci dolore et est optio.
+          Enim in temporibus consequatur qui sit.: Debitis aut ullam qui ducimus sint
+            aut.
+          Et excepturi.: Natus optio impedit nobis.
+        additionalProperties: true
+      message:
+        type: string
+        description: message
+        example: bad request
+    example:
+      code: 200
+      data:
+        Rerum aperiam iste.: Facilis perspiciatis.
+      message: bad request
+    required:
+    - code
   UserMethodChangeInfoRequestBody:
     title: UserMethodChangeInfoRequestBody
+    type: object
+    properties:
+      icon:
+        type: string
+        description: icon of user
+        example: Voluptas sit placeat cum.
+      name:
+        type: string
+        description: name of user
+        example: Aspernatur vero minus totam veritatis voluptas.
+    example:
+      icon: Perspiciatis quia.
+      name: Esse aut aut.
+    required:
+    - name
+    - icon
+  UserMethodChangeInfoResponseBody:
+    title: 'Mediatype identifier: application/vnd.cellar.stored-bottle; view=default'
     type: object
     properties:
       email:
         type: string
         description: Vintage of bottle
-        example: 9gk
+        example: sv7
         maxLength: 100
       icon:
         type: string
@@ -215,32 +318,73 @@ definitions:
         example: Red wine blend with an emphasis on the Cabernet Franc grape and including
           other Bordeaux grape varietals and some Syrah
         maxLength: 2000
+      id:
+        type: integer
+        description: ID is the unique id of the bottle.
+        example: 1
+        format: int64
       name:
         type: string
         description: Name of bottle
         example: Blue's Cuvee
         maxLength: 100
+    description: ChangeInfoResponseBody result type (default view)
     example:
-      email: 5pb
+      email: "727"
       icon: Red wine blend with an emphasis on the Cabernet Franc grape and including
         other Bordeaux grape varietals and some Syrah
+      id: 1
       name: Blue's Cuvee
     required:
+    - id
     - name
-    - email
     - icon
+    - email
   UserMethodChangePasswordRequestBody:
     title: UserMethodChangePasswordRequestBody
     type: object
     properties:
+      newPassword:
+        type: string
+        description: new password
+        example: new password
       oldPassword:
         type: string
         description: old password
         example: old password
     example:
+      newPassword: new password
       oldPassword: old password
     required:
     - oldPassword
+    - newPassword
+  UserMethodChangePasswordResponseBody:
+    title: UserMethodChangePasswordResponseBody
+    type: object
+    properties:
+      code:
+        type: integer
+        description: code
+        example: 200
+        format: int64
+      data:
+        type: object
+        example:
+          Iste commodi qui enim dolorum velit.: Praesentium consectetur.
+          Ut laboriosam.: Ut minima eos et officiis et.
+        additionalProperties: true
+      message:
+        type: string
+        description: message
+        example: bad request
+    example:
+      code: 200
+      data:
+        Corporis optio tempore.: Ut voluptatum mollitia.
+        Eius ut dolor id fugit qui quaerat.: Et voluptatibus voluptas incidunt nihil.
+      message: bad request
+    required:
+    - code
   UserMethodForgotPasswordRequestBody:
     title: UserMethodForgotPasswordRequestBody
     type: object
@@ -248,8 +392,43 @@ definitions:
       code:
         type: string
         example: "1234"
+      email:
+        type: string
+        example: Aspernatur cupiditate qui sed ut magni.
+      newPassword:
+        type: string
+        example: Esse qui repudiandae ullam.
     example:
       code: "1234"
+      email: Distinctio numquam.
+      newPassword: Ipsam recusandae.
+    required:
+    - code
+    - newPassword
+    - email
+  UserMethodForgotPasswordResponseBody:
+    title: UserMethodForgotPasswordResponseBody
+    type: object
+    properties:
+      code:
+        type: integer
+        description: code
+        example: 200
+        format: int64
+      data:
+        type: object
+        example:
+          Ut quod.: Ad eum et aut qui qui qui.
+        additionalProperties: true
+      message:
+        type: string
+        description: message
+        example: bad request
+    example:
+      code: 200
+      data:
+        Beatae dignissimos libero vel.: Rerum molestiae quo.
+      message: bad request
     required:
     - code
   UserMethodLoginRequestBody:
@@ -313,8 +492,8 @@ definitions:
       data:
         type: object
         example:
-          Qui dolor.: Quia cumque doloremque.
-          Qui voluptate consequatur.: Aliquid nemo sit architecto quo sequi.
+          Consequatur qui dolor.: Voluptatem corrupti reprehenderit.
+          Expedita veniam vel.: Aliquam perferendis.
         additionalProperties: true
       message:
         type: string
@@ -323,9 +502,47 @@ definitions:
     example:
       code: 200
       data:
-        Ab quibusdam.: Excepturi doloremque sapiente reprehenderit itaque.
-        Nostrum ipsam dolores.: Hic rerum placeat quia dolore illo.
-        Voluptas sapiente ratione hic sunt minus optio.: Natus dignissimos sunt.
+        Aliquam quaerat molestiae accusamus voluptas aut iste.: Id sed quia placeat.
+        Voluptate ratione ipsa.: Non perferendis.
+      message: bad request
+    required:
+    - code
+  UserMethodSendVerifyCodeRequestBody:
+    title: UserMethodSendVerifyCodeRequestBody
+    type: object
+    properties:
+      email:
+        type: string
+        example: Expedita sapiente unde aspernatur voluptas.
+    example:
+      email: Alias quis et aut doloribus.
+    required:
+    - email
+  UserMethodSendVerifyCodeResponseBody:
+    title: UserMethodSendVerifyCodeResponseBody
+    type: object
+    properties:
+      code:
+        type: integer
+        description: code
+        example: 200
+        format: int64
+      data:
+        type: object
+        example:
+          Eius ad officia corrupti soluta qui voluptas.: Dolorem error qui.
+          Quibusdam delectus.: Qui optio aut dolor accusantium consequuntur qui.
+        additionalProperties: true
+      message:
+        type: string
+        description: message
+        example: bad request
+    example:
+      code: 200
+      data:
+        A dolorum saepe eum hic.: Iste earum.
+        Ducimus sit officiis repudiandae laudantium dolorem.: Ea assumenda.
+        Quasi rerum accusamus quisquam.: Dolore aut consequatur.
       message: bad request
     required:
     - code
@@ -336,14 +553,14 @@ definitions:
       id:
         type: string
         description: ID of missing user
-        example: Quod quia eum.
+        example: Repellat eum eius sit ratione ad qui.
       message:
         type: string
         description: Message of error
         example: user 1 not found
     description: Bottle not found
     example:
-      id: Quasi quia nihil.
+      id: Quis eos voluptatem dolor tenetur praesentium minus.
       message: user 1 not found
     required:
     - message
@@ -355,7 +572,7 @@ definitions:
       email:
         type: string
         description: Vintage of bottle
-        example: f91
+        example: 9i6
         maxLength: 100
       icon:
         type: string
@@ -375,7 +592,7 @@ definitions:
         maxLength: 100
     description: ShowResponseBody result type (default view)
     example:
-      email: k8w
+      email: qwb
       icon: Red wine blend with an emphasis on the Cabernet Franc grape and including
         other Bordeaux grape varietals and some Syrah
       id: 1

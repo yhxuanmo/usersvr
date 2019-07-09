@@ -22,7 +22,7 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `user-method (register|show|login|change-info|change-password|forgot-password|change-email)
+	return `user-method (register|show|login|change-info|change-password|forgot-password|change-email|send-verify-code)
 `
 }
 
@@ -53,15 +53,21 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 
 		userMethodChangeInfoFlags       = flag.NewFlagSet("change-info", flag.ExitOnError)
 		userMethodChangeInfoMessageFlag = userMethodChangeInfoFlags.String("message", "", "")
+		userMethodChangeInfoTokenFlag   = userMethodChangeInfoFlags.String("token", "REQUIRED", "")
 
 		userMethodChangePasswordFlags       = flag.NewFlagSet("change-password", flag.ExitOnError)
 		userMethodChangePasswordMessageFlag = userMethodChangePasswordFlags.String("message", "", "")
+		userMethodChangePasswordTokenFlag   = userMethodChangePasswordFlags.String("token", "REQUIRED", "")
 
 		userMethodForgotPasswordFlags       = flag.NewFlagSet("forgot-password", flag.ExitOnError)
 		userMethodForgotPasswordMessageFlag = userMethodForgotPasswordFlags.String("message", "", "")
 
 		userMethodChangeEmailFlags       = flag.NewFlagSet("change-email", flag.ExitOnError)
 		userMethodChangeEmailMessageFlag = userMethodChangeEmailFlags.String("message", "", "")
+		userMethodChangeEmailTokenFlag   = userMethodChangeEmailFlags.String("token", "REQUIRED", "")
+
+		userMethodSendVerifyCodeFlags       = flag.NewFlagSet("send-verify-code", flag.ExitOnError)
+		userMethodSendVerifyCodeMessageFlag = userMethodSendVerifyCodeFlags.String("message", "", "")
 	)
 	userMethodFlags.Usage = userMethodUsage
 	userMethodRegisterFlags.Usage = userMethodRegisterUsage
@@ -71,6 +77,7 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 	userMethodChangePasswordFlags.Usage = userMethodChangePasswordUsage
 	userMethodForgotPasswordFlags.Usage = userMethodForgotPasswordUsage
 	userMethodChangeEmailFlags.Usage = userMethodChangeEmailUsage
+	userMethodSendVerifyCodeFlags.Usage = userMethodSendVerifyCodeUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -127,6 +134,9 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			case "change-email":
 				epf = userMethodChangeEmailFlags
 
+			case "send-verify-code":
+				epf = userMethodSendVerifyCodeFlags
+
 			}
 
 		}
@@ -163,16 +173,19 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 				data, err = usermethodc.BuildLoginPayload(*userMethodLoginMessageFlag)
 			case "change-info":
 				endpoint = c.ChangeInfo()
-				data, err = usermethodc.BuildChangeInfoPayload(*userMethodChangeInfoMessageFlag)
+				data, err = usermethodc.BuildChangeInfoPayload(*userMethodChangeInfoMessageFlag, *userMethodChangeInfoTokenFlag)
 			case "change-password":
 				endpoint = c.ChangePassword()
-				data, err = usermethodc.BuildChangePasswordPayload(*userMethodChangePasswordMessageFlag)
+				data, err = usermethodc.BuildChangePasswordPayload(*userMethodChangePasswordMessageFlag, *userMethodChangePasswordTokenFlag)
 			case "forgot-password":
 				endpoint = c.ForgotPassword()
 				data, err = usermethodc.BuildForgotPasswordPayload(*userMethodForgotPasswordMessageFlag)
 			case "change-email":
 				endpoint = c.ChangeEmail()
-				data, err = usermethodc.BuildChangeEmailPayload(*userMethodChangeEmailMessageFlag)
+				data, err = usermethodc.BuildChangeEmailPayload(*userMethodChangeEmailMessageFlag, *userMethodChangeEmailTokenFlag)
+			case "send-verify-code":
+				endpoint = c.SendVerifyCode()
+				data, err = usermethodc.BuildSendVerifyCodePayload(*userMethodSendVerifyCodeMessageFlag)
 			}
 		}
 	}
@@ -198,6 +211,7 @@ COMMAND:
     change-password: Remove bottle from storage
     forgot-password: Rate bottles by IDs
     change-email: Add n number of bottles and return their IDs. This is a multipart request and each part has field name 'bottle' and contains the encoded bottle info to be added.
+    send-verify-code: send verify code to email
 
 Additional help:
     %s user-method COMMAND --help
@@ -225,7 +239,7 @@ Show user info
     -token STRING: 
 
 Example:
-    `+os.Args[0]+` user-method show --view "tiny" --token "Velit rem temporibus possimus qui."
+    `+os.Args[0]+` user-method show --view "tiny" --token "Autem accusamus et dolorem voluptatem."
 `, os.Args[0])
 }
 
@@ -244,31 +258,32 @@ Example:
 }
 
 func userMethodChangeInfoUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] user-method change-info -message JSON
+	fmt.Fprintf(os.Stderr, `%s [flags] user-method change-info -message JSON -token STRING
 
 Add new bottle and return its ID.
     -message JSON: 
+    -token STRING: 
 
 Example:
     `+os.Args[0]+` user-method change-info --message '{
-      "email": "po2",
-      "icon": "Red wine blend with an emphasis on the Cabernet Franc grape and including other Bordeaux grape varietals and some Syrah",
-      "name": "Blue\'s Cuvee"
-   }'
+      "icon": "Qui et nostrum.",
+      "name": "Dolorem et quasi quas ab."
+   }' --token "Ratione officia labore amet."
 `, os.Args[0])
 }
 
 func userMethodChangePasswordUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] user-method change-password -message JSON
+	fmt.Fprintf(os.Stderr, `%s [flags] user-method change-password -message JSON -token STRING
 
 Remove bottle from storage
     -message JSON: 
+    -token STRING: 
 
 Example:
     `+os.Args[0]+` user-method change-password --message '{
       "newPassword": "new password",
       "oldPassword": "old password"
-   }'
+   }' --token "Blanditiis quasi voluptate rerum et."
 `, os.Args[0])
 }
 
@@ -281,20 +296,35 @@ Rate bottles by IDs
 Example:
     `+os.Args[0]+` user-method forgot-password --message '{
       "code": "1234",
-      "newPassword": "Id voluptatem quibusdam nulla autem."
+      "email": "Id deleniti.",
+      "newPassword": "Corporis autem ut."
    }'
 `, os.Args[0])
 }
 
 func userMethodChangeEmailUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] user-method change-email -message JSON
+	fmt.Fprintf(os.Stderr, `%s [flags] user-method change-email -message JSON -token STRING
 
 Add n number of bottles and return their IDs. This is a multipart request and each part has field name 'bottle' and contains the encoded bottle info to be added.
     -message JSON: 
+    -token STRING: 
 
 Example:
     `+os.Args[0]+` user-method change-email --message '{
-      "email": "Dolorem repudiandae blanditiis ab molestiae quidem ut."
+      "email": "Accusamus rerum."
+   }' --token "Illum ullam porro repellendus rerum eligendi."
+`, os.Args[0])
+}
+
+func userMethodSendVerifyCodeUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] user-method send-verify-code -message JSON
+
+send verify code to email
+    -message JSON: 
+
+Example:
+    `+os.Args[0]+` user-method send-verify-code --message '{
+      "email": "Sint quos."
    }'
 `, os.Args[0])
 }

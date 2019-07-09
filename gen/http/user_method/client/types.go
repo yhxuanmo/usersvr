@@ -35,11 +35,9 @@ type LoginRequestBody struct {
 // ChangeInfoRequestBody is the type of the "userMethod" service "changeInfo"
 // endpoint HTTP request body.
 type ChangeInfoRequestBody struct {
-	// Name of bottle
+	// name of user
 	Name string `form:"name" json:"name" xml:"name"`
-	// Vintage of bottle
-	Email string `form:"email" json:"email" xml:"email"`
-	// Description of bottle
+	// icon of user
 	Icon string `form:"icon" json:"icon" xml:"icon"`
 }
 
@@ -48,17 +46,27 @@ type ChangeInfoRequestBody struct {
 type ChangePasswordRequestBody struct {
 	// old password
 	OldPassword string `form:"oldPassword" json:"oldPassword" xml:"oldPassword"`
+	// new password
+	NewPassword string `form:"newPassword" json:"newPassword" xml:"newPassword"`
 }
 
 // ForgotPasswordRequestBody is the type of the "userMethod" service
 // "forgotPassword" endpoint HTTP request body.
 type ForgotPasswordRequestBody struct {
-	Code string `form:"code" json:"code" xml:"code"`
+	Code        string `form:"code" json:"code" xml:"code"`
+	NewPassword string `form:"newPassword" json:"newPassword" xml:"newPassword"`
+	Email       string `form:"email" json:"email" xml:"email"`
 }
 
 // ChangeEmailRequestBody is the type of the "userMethod" service "changeEmail"
 // endpoint HTTP request body.
 type ChangeEmailRequestBody struct {
+	Email string `form:"email" json:"email" xml:"email"`
+}
+
+// SendVerifyCodeRequestBody is the type of the "userMethod" service
+// "sendVerifyCode" endpoint HTTP request body.
+type SendVerifyCodeRequestBody struct {
 	Email string `form:"email" json:"email" xml:"email"`
 }
 
@@ -93,6 +101,60 @@ type LoginResponseBody struct {
 	JWT *string `form:"jwt,omitempty" json:"jwt,omitempty" xml:"jwt,omitempty"`
 }
 
+// ChangeInfoResponseBody is the type of the "userMethod" service "changeInfo"
+// endpoint HTTP response body.
+type ChangeInfoResponseBody struct {
+	// ID is the unique id of the bottle.
+	ID *int `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Name of bottle
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Vintage of bottle
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// Description of bottle
+	Icon     *string `form:"icon,omitempty" json:"icon,omitempty" xml:"icon,omitempty"`
+	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
+}
+
+// ChangePasswordResponseBody is the type of the "userMethod" service
+// "changePassword" endpoint HTTP response body.
+type ChangePasswordResponseBody struct {
+	// code
+	Code *int `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// message
+	Message *string           `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	Data    map[string]string `form:"data,omitempty" json:"data,omitempty" xml:"data,omitempty"`
+}
+
+// ForgotPasswordResponseBody is the type of the "userMethod" service
+// "forgotPassword" endpoint HTTP response body.
+type ForgotPasswordResponseBody struct {
+	// code
+	Code *int `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// message
+	Message *string           `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	Data    map[string]string `form:"data,omitempty" json:"data,omitempty" xml:"data,omitempty"`
+}
+
+// ChangeEmailResponseBody is the type of the "userMethod" service
+// "changeEmail" endpoint HTTP response body.
+type ChangeEmailResponseBody struct {
+	// code
+	Code *int `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// message
+	Message *string           `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	Data    map[string]string `form:"data,omitempty" json:"data,omitempty" xml:"data,omitempty"`
+}
+
+// SendVerifyCodeResponseBody is the type of the "userMethod" service
+// "sendVerifyCode" endpoint HTTP response body.
+type SendVerifyCodeResponseBody struct {
+	// code
+	Code *int `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// message
+	Message *string           `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	Data    map[string]string `form:"data,omitempty" json:"data,omitempty" xml:"data,omitempty"`
+}
+
 // ShowNotFoundResponseBody is the type of the "userMethod" service "show"
 // endpoint HTTP response body for the "not_found" error.
 type ShowNotFoundResponseBody struct {
@@ -124,11 +186,10 @@ func NewLoginRequestBody(p *usermethod.LoginPayload) *LoginRequestBody {
 
 // NewChangeInfoRequestBody builds the HTTP request body from the payload of
 // the "changeInfo" endpoint of the "userMethod" service.
-func NewChangeInfoRequestBody(p *usermethod.User) *ChangeInfoRequestBody {
+func NewChangeInfoRequestBody(p *usermethod.ChangeInfoPayload) *ChangeInfoRequestBody {
 	body := &ChangeInfoRequestBody{
-		Name:  p.Name,
-		Email: p.Email,
-		Icon:  p.Icon,
+		Name: p.Name,
+		Icon: p.Icon,
 	}
 	return body
 }
@@ -138,6 +199,7 @@ func NewChangeInfoRequestBody(p *usermethod.User) *ChangeInfoRequestBody {
 func NewChangePasswordRequestBody(p *usermethod.ChangePasswordPayload) *ChangePasswordRequestBody {
 	body := &ChangePasswordRequestBody{
 		OldPassword: p.OldPassword,
+		NewPassword: p.NewPassword,
 	}
 	return body
 }
@@ -146,7 +208,9 @@ func NewChangePasswordRequestBody(p *usermethod.ChangePasswordPayload) *ChangePa
 // of the "forgotPassword" endpoint of the "userMethod" service.
 func NewForgotPasswordRequestBody(p *usermethod.ForgotPasswordPayload) *ForgotPasswordRequestBody {
 	body := &ForgotPasswordRequestBody{
-		Code: p.Code,
+		Code:        p.Code,
+		NewPassword: p.NewPassword,
+		Email:       p.Email,
 	}
 	return body
 }
@@ -155,6 +219,15 @@ func NewForgotPasswordRequestBody(p *usermethod.ForgotPasswordPayload) *ForgotPa
 // the "changeEmail" endpoint of the "userMethod" service.
 func NewChangeEmailRequestBody(p *usermethod.ChangeEmailPayload) *ChangeEmailRequestBody {
 	body := &ChangeEmailRequestBody{
+		Email: p.Email,
+	}
+	return body
+}
+
+// NewSendVerifyCodeRequestBody builds the HTTP request body from the payload
+// of the "sendVerifyCode" endpoint of the "userMethod" service.
+func NewSendVerifyCodeRequestBody(p *usermethod.SendVerifyCodePayload) *SendVerifyCodeRequestBody {
+	body := &SendVerifyCodeRequestBody{
 		Email: p.Email,
 	}
 	return body
@@ -209,6 +282,91 @@ func NewLoginCredsOK(body *LoginResponseBody) *usermethod.Creds {
 	return v
 }
 
+// NewChangeInfoUserInfoOK builds a "userMethod" service "changeInfo" endpoint
+// result from a HTTP "OK" response.
+func NewChangeInfoUserInfoOK(body *ChangeInfoResponseBody) *usermethodviews.UserInfoView {
+	v := &usermethodviews.UserInfoView{
+		ID:       body.ID,
+		Name:     body.Name,
+		Email:    body.Email,
+		Icon:     body.Icon,
+		Password: body.Password,
+	}
+	return v
+}
+
+// NewChangePasswordResponseResultOK builds a "userMethod" service
+// "changePassword" endpoint result from a HTTP "OK" response.
+func NewChangePasswordResponseResultOK(body *ChangePasswordResponseBody) *usermethod.ResponseResult {
+	v := &usermethod.ResponseResult{
+		Code:    *body.Code,
+		Message: body.Message,
+	}
+	if body.Data != nil {
+		v.Data = make(map[string]string, len(body.Data))
+		for key, val := range body.Data {
+			tk := key
+			tv := val
+			v.Data[tk] = tv
+		}
+	}
+	return v
+}
+
+// NewForgotPasswordResponseResultOK builds a "userMethod" service
+// "forgotPassword" endpoint result from a HTTP "OK" response.
+func NewForgotPasswordResponseResultOK(body *ForgotPasswordResponseBody) *usermethod.ResponseResult {
+	v := &usermethod.ResponseResult{
+		Code:    *body.Code,
+		Message: body.Message,
+	}
+	if body.Data != nil {
+		v.Data = make(map[string]string, len(body.Data))
+		for key, val := range body.Data {
+			tk := key
+			tv := val
+			v.Data[tk] = tv
+		}
+	}
+	return v
+}
+
+// NewChangeEmailResponseResultOK builds a "userMethod" service "changeEmail"
+// endpoint result from a HTTP "OK" response.
+func NewChangeEmailResponseResultOK(body *ChangeEmailResponseBody) *usermethod.ResponseResult {
+	v := &usermethod.ResponseResult{
+		Code:    *body.Code,
+		Message: body.Message,
+	}
+	if body.Data != nil {
+		v.Data = make(map[string]string, len(body.Data))
+		for key, val := range body.Data {
+			tk := key
+			tv := val
+			v.Data[tk] = tv
+		}
+	}
+	return v
+}
+
+// NewSendVerifyCodeResponseResultOK builds a "userMethod" service
+// "sendVerifyCode" endpoint result from a HTTP "OK" response.
+func NewSendVerifyCodeResponseResultOK(body *SendVerifyCodeResponseBody) *usermethod.ResponseResult {
+	v := &usermethod.ResponseResult{
+		Code:    *body.Code,
+		Message: body.Message,
+	}
+	if body.Data != nil {
+		v.Data = make(map[string]string, len(body.Data))
+		for key, val := range body.Data {
+			tk := key
+			tv := val
+			v.Data[tk] = tv
+		}
+	}
+	return v
+}
+
 // ValidateRegisterResponseBody runs the validations defined on
 // RegisterResponseBody
 func ValidateRegisterResponseBody(body *RegisterResponseBody) (err error) {
@@ -222,6 +380,42 @@ func ValidateRegisterResponseBody(body *RegisterResponseBody) (err error) {
 func ValidateLoginResponseBody(body *LoginResponseBody) (err error) {
 	if body.JWT == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("jwt", "body"))
+	}
+	return
+}
+
+// ValidateChangePasswordResponseBody runs the validations defined on
+// ChangePasswordResponseBody
+func ValidateChangePasswordResponseBody(body *ChangePasswordResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	return
+}
+
+// ValidateForgotPasswordResponseBody runs the validations defined on
+// ForgotPasswordResponseBody
+func ValidateForgotPasswordResponseBody(body *ForgotPasswordResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	return
+}
+
+// ValidateChangeEmailResponseBody runs the validations defined on
+// ChangeEmailResponseBody
+func ValidateChangeEmailResponseBody(body *ChangeEmailResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	return
+}
+
+// ValidateSendVerifyCodeResponseBody runs the validations defined on
+// SendVerifyCodeResponseBody
+func ValidateSendVerifyCodeResponseBody(body *SendVerifyCodeResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}
 	return
 }

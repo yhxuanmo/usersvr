@@ -22,10 +22,11 @@ type Client struct {
 	ChangePasswordEndpoint goa.Endpoint
 	ForgotPasswordEndpoint goa.Endpoint
 	ChangeEmailEndpoint    goa.Endpoint
+	SendVerifyCodeEndpoint goa.Endpoint
 }
 
 // NewClient initializes a "userMethod" service client given the endpoints.
-func NewClient(register, show, login, changeInfo, changePassword, forgotPassword, changeEmail goa.Endpoint) *Client {
+func NewClient(register, show, login, changeInfo, changePassword, forgotPassword, changeEmail, sendVerifyCode goa.Endpoint) *Client {
 	return &Client{
 		RegisterEndpoint:       register,
 		ShowEndpoint:           show,
@@ -34,6 +35,7 @@ func NewClient(register, show, login, changeInfo, changePassword, forgotPassword
 		ChangePasswordEndpoint: changePassword,
 		ForgotPasswordEndpoint: forgotPassword,
 		ChangeEmailEndpoint:    changeEmail,
+		SendVerifyCodeEndpoint: sendVerifyCode,
 	}
 }
 
@@ -77,13 +79,13 @@ func (c *Client) Login(ctx context.Context, p *LoginPayload) (res *Creds, err er
 }
 
 // ChangeInfo calls the "changeInfo" endpoint of the "userMethod" service.
-func (c *Client) ChangeInfo(ctx context.Context, p *User) (res string, err error) {
+func (c *Client) ChangeInfo(ctx context.Context, p *ChangeInfoPayload) (res *UserInfo, err error) {
 	var ires interface{}
 	ires, err = c.ChangeInfoEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(string), nil
+	return ires.(*UserInfo), nil
 }
 
 // ChangePassword calls the "changePassword" endpoint of the "userMethod"
@@ -91,27 +93,46 @@ func (c *Client) ChangeInfo(ctx context.Context, p *User) (res string, err error
 // ChangePassword may return the following errors:
 //	- "not_found" (type *NotFound): Bottle not found
 //	- error: internal error
-func (c *Client) ChangePassword(ctx context.Context, p *ChangePasswordPayload) (err error) {
-	_, err = c.ChangePasswordEndpoint(ctx, p)
-	return
+func (c *Client) ChangePassword(ctx context.Context, p *ChangePasswordPayload) (res *ResponseResult, err error) {
+	var ires interface{}
+	ires, err = c.ChangePasswordEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ResponseResult), nil
 }
 
 // ForgotPassword calls the "forgotPassword" endpoint of the "userMethod"
 // service.
-func (c *Client) ForgotPassword(ctx context.Context, p *ForgotPasswordPayload) (err error) {
-	_, err = c.ForgotPasswordEndpoint(ctx, p)
-	return
+func (c *Client) ForgotPassword(ctx context.Context, p *ForgotPasswordPayload) (res *ResponseResult, err error) {
+	var ires interface{}
+	ires, err = c.ForgotPasswordEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ResponseResult), nil
 }
 
 // ChangeEmail calls the "changeEmail" endpoint of the "userMethod" service.
 // ChangeEmail may return the following errors:
 //	- "email_exist" (type *EmailExist): email is existed
 //	- error: internal error
-func (c *Client) ChangeEmail(ctx context.Context, p *ChangeEmailPayload) (res string, err error) {
+func (c *Client) ChangeEmail(ctx context.Context, p *ChangeEmailPayload) (res *ResponseResult, err error) {
 	var ires interface{}
 	ires, err = c.ChangeEmailEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(string), nil
+	return ires.(*ResponseResult), nil
+}
+
+// SendVerifyCode calls the "sendVerifyCode" endpoint of the "userMethod"
+// service.
+func (c *Client) SendVerifyCode(ctx context.Context, p *SendVerifyCodePayload) (res *ResponseResult, err error) {
+	var ires interface{}
+	ires, err = c.SendVerifyCodeEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ResponseResult), nil
 }

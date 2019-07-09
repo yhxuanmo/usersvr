@@ -29,6 +29,8 @@ service UserMethod {
 // and each part has field name 'bottle' and contains the encoded bottle info
 // to be added.
 	rpc ChangeEmail (ChangeEmailRequest) returns (ChangeEmailResponse);
+	// send verify code to email
+	rpc SendVerifyCode (SendVerifyCodeRequest) returns (SendVerifyCodeResponse);
 }
 
 message RegisterRequest {
@@ -81,40 +83,73 @@ message LoginResponse {
 }
 
 message ChangeInfoRequest {
+	// name of user
+	string name = 2;
+	// icon of user
+	string icon = 3;
+}
+
+message ChangeInfoResponse {
+	// ID is the unique id of the bottle.
+	sint32 id = 8;
 	// Name of bottle
 	string name = 1;
 	// Vintage of bottle
 	string email = 2;
 	// Description of bottle
 	string icon = 3;
-}
-
-message ChangeInfoResponse {
-	string field = 1;
+	string password = 5;
 }
 
 message ChangePasswordRequest {
 	// old password
-	string old_password = 1;
+	string old_password = 2;
 	// new password
-	string new_password = 2;
+	string new_password = 3;
 }
 
 message ChangePasswordResponse {
+	// code
+	sint32 code = 1;
+	// message
+	string message_ = 2;
+	map<string, string> data = 3;
 }
 
 message ForgotPasswordRequest {
 	string code = 1;
 	string new_password = 2;
+	string email = 3;
 }
 
 message ForgotPasswordResponse {
+	// code
+	sint32 code = 1;
+	// message
+	string message_ = 2;
+	map<string, string> data = 3;
 }
 
 message ChangeEmailRequest {
-	string email = 1;
+	string email = 2;
 }
 
 message ChangeEmailResponse {
-	string field = 1;
+	// code
+	sint32 code = 1;
+	// message
+	string message_ = 2;
+	map<string, string> data = 3;
+}
+
+message SendVerifyCodeRequest {
+	string email = 1;
+}
+
+message SendVerifyCodeResponse {
+	// code
+	sint32 code = 1;
+	// message
+	string message_ = 2;
+	map<string, string> data = 3;
 }

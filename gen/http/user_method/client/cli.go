@@ -10,10 +10,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"unicode/utf8"
 	usermethod "usersvr/gen/user_method"
-
-	goa "goa.design/goa/v3/pkg"
 )
 
 // BuildRegisterPayload builds the payload for the userMethod register endpoint
@@ -74,49 +71,47 @@ func BuildLoginPayload(userMethodLoginBody string) (*usermethod.LoginPayload, er
 
 // BuildChangeInfoPayload builds the payload for the userMethod changeInfo
 // endpoint from CLI flags.
-func BuildChangeInfoPayload(userMethodChangeInfoBody string) (*usermethod.User, error) {
+func BuildChangeInfoPayload(userMethodChangeInfoBody string, userMethodChangeInfoToken string) (*usermethod.ChangeInfoPayload, error) {
 	var err error
 	var body ChangeInfoRequestBody
 	{
 		err = json.Unmarshal([]byte(userMethodChangeInfoBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"email\": \"nwb\",\n      \"icon\": \"Red wine blend with an emphasis on the Cabernet Franc grape and including other Bordeaux grape varietals and some Syrah\",\n      \"name\": \"Blue\\'s Cuvee\"\n   }'")
-		}
-		if utf8.RuneCountInString(body.Name) > 100 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", body.Name, utf8.RuneCountInString(body.Name), 100, false))
-		}
-		if utf8.RuneCountInString(body.Email) > 100 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.email", body.Email, utf8.RuneCountInString(body.Email), 100, false))
-		}
-		if utf8.RuneCountInString(body.Icon) > 2000 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.icon", body.Icon, utf8.RuneCountInString(body.Icon), 2000, false))
-		}
-		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"icon\": \"Quia itaque dolorum repellat in magnam quia.\",\n      \"name\": \"Ut voluptatem quia laudantium.\"\n   }'")
 		}
 	}
-	v := &usermethod.User{
-		Name:  body.Name,
-		Email: body.Email,
-		Icon:  body.Icon,
+	var token string
+	{
+		token = userMethodChangeInfoToken
 	}
+	v := &usermethod.ChangeInfoPayload{
+		Name: body.Name,
+		Icon: body.Icon,
+	}
+	v.Token = token
 	return v, nil
 }
 
 // BuildChangePasswordPayload builds the payload for the userMethod
 // changePassword endpoint from CLI flags.
-func BuildChangePasswordPayload(userMethodChangePasswordBody string) (*usermethod.ChangePasswordPayload, error) {
+func BuildChangePasswordPayload(userMethodChangePasswordBody string, userMethodChangePasswordToken string) (*usermethod.ChangePasswordPayload, error) {
 	var err error
 	var body ChangePasswordRequestBody
 	{
 		err = json.Unmarshal([]byte(userMethodChangePasswordBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"oldPassword\": \"old password\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"newPassword\": \"new password\",\n      \"oldPassword\": \"old password\"\n   }'")
 		}
+	}
+	var token string
+	{
+		token = userMethodChangePasswordToken
 	}
 	v := &usermethod.ChangePasswordPayload{
 		OldPassword: body.OldPassword,
+		NewPassword: body.NewPassword,
 	}
+	v.Token = token
 	return v, nil
 }
 
@@ -128,27 +123,51 @@ func BuildForgotPasswordPayload(userMethodForgotPasswordBody string) (*usermetho
 	{
 		err = json.Unmarshal([]byte(userMethodForgotPasswordBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"code\": \"1234\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"code\": \"1234\",\n      \"email\": \"Repellat cum quos dicta delectus.\",\n      \"newPassword\": \"Amet non ratione.\"\n   }'")
 		}
 	}
 	v := &usermethod.ForgotPasswordPayload{
-		Code: body.Code,
+		Code:        body.Code,
+		NewPassword: body.NewPassword,
+		Email:       body.Email,
 	}
 	return v, nil
 }
 
 // BuildChangeEmailPayload builds the payload for the userMethod changeEmail
 // endpoint from CLI flags.
-func BuildChangeEmailPayload(userMethodChangeEmailBody string) (*usermethod.ChangeEmailPayload, error) {
+func BuildChangeEmailPayload(userMethodChangeEmailBody string, userMethodChangeEmailToken string) (*usermethod.ChangeEmailPayload, error) {
 	var err error
 	var body ChangeEmailRequestBody
 	{
 		err = json.Unmarshal([]byte(userMethodChangeEmailBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"email\": \"Omnis distinctio dolorem tempore.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"email\": \"Doloremque enim.\"\n   }'")
 		}
 	}
+	var token string
+	{
+		token = userMethodChangeEmailToken
+	}
 	v := &usermethod.ChangeEmailPayload{
+		Email: body.Email,
+	}
+	v.Token = token
+	return v, nil
+}
+
+// BuildSendVerifyCodePayload builds the payload for the userMethod
+// sendVerifyCode endpoint from CLI flags.
+func BuildSendVerifyCodePayload(userMethodSendVerifyCodeBody string) (*usermethod.SendVerifyCodePayload, error) {
+	var err error
+	var body SendVerifyCodeRequestBody
+	{
+		err = json.Unmarshal([]byte(userMethodSendVerifyCodeBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"email\": \"Nostrum ipsam dolores.\"\n   }'")
+		}
+	}
+	v := &usermethod.SendVerifyCodePayload{
 		Email: body.Email,
 	}
 	return v, nil

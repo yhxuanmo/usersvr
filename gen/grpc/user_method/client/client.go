@@ -108,7 +108,7 @@ func (c *Client) ChangePassword() goa.Endpoint {
 		inv := goagrpc.NewInvoker(
 			BuildChangePasswordFunc(c.grpccli, c.opts...),
 			EncodeChangePasswordRequest,
-			nil)
+			DecodeChangePasswordResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			return nil, goa.Fault(err.Error())
@@ -124,7 +124,7 @@ func (c *Client) ForgotPassword() goa.Endpoint {
 		inv := goagrpc.NewInvoker(
 			BuildForgotPasswordFunc(c.grpccli, c.opts...),
 			EncodeForgotPasswordRequest,
-			nil)
+			DecodeForgotPasswordResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			return nil, goa.Fault(err.Error())
@@ -141,6 +141,22 @@ func (c *Client) ChangeEmail() goa.Endpoint {
 			BuildChangeEmailFunc(c.grpccli, c.opts...),
 			EncodeChangeEmailRequest,
 			DecodeChangeEmailResponse)
+		res, err := inv.Invoke(ctx, v)
+		if err != nil {
+			return nil, goa.Fault(err.Error())
+		}
+		return res, nil
+	}
+}
+
+// SendVerifyCode calls the "SendVerifyCode" function in
+// user_methodpb.UserMethodClient interface.
+func (c *Client) SendVerifyCode() goa.Endpoint {
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		inv := goagrpc.NewInvoker(
+			BuildSendVerifyCodeFunc(c.grpccli, c.opts...),
+			EncodeSendVerifyCodeRequest,
+			DecodeSendVerifyCodeResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			return nil, goa.Fault(err.Error())

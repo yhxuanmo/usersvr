@@ -26,6 +26,7 @@ type Server struct {
 	ChangePasswordH goagrpc.UnaryHandler
 	ForgotPasswordH goagrpc.UnaryHandler
 	ChangeEmailH    goagrpc.UnaryHandler
+	SendVerifyCodeH goagrpc.UnaryHandler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -44,6 +45,7 @@ func New(e *usermethod.Endpoints, uh goagrpc.UnaryHandler) *Server {
 		ChangePasswordH: NewChangePasswordHandler(e.ChangePassword, uh),
 		ForgotPasswordH: NewForgotPasswordHandler(e.ForgotPassword, uh),
 		ChangeEmailH:    NewChangeEmailHandler(e.ChangeEmail, uh),
+		SendVerifyCodeH: NewSendVerifyCodeHandler(e.SendVerifyCode, uh),
 	}
 }
 
@@ -199,4 +201,25 @@ func (s *Server) ChangeEmail(ctx context.Context, message *user_methodpb.ChangeE
 		return nil, goagrpc.EncodeError(err)
 	}
 	return resp.(*user_methodpb.ChangeEmailResponse), nil
+}
+
+// NewSendVerifyCodeHandler creates a gRPC handler which serves the
+// "userMethod" service "sendVerifyCode" endpoint.
+func NewSendVerifyCodeHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
+	if h == nil {
+		h = goagrpc.NewUnaryHandler(endpoint, DecodeSendVerifyCodeRequest, EncodeSendVerifyCodeResponse)
+	}
+	return h
+}
+
+// SendVerifyCode implements the "SendVerifyCode" method in
+// user_methodpb.UserMethodServer interface.
+func (s *Server) SendVerifyCode(ctx context.Context, message *user_methodpb.SendVerifyCodeRequest) (*user_methodpb.SendVerifyCodeResponse, error) {
+	ctx = context.WithValue(ctx, goa.MethodKey, "sendVerifyCode")
+	ctx = context.WithValue(ctx, goa.ServiceKey, "userMethod")
+	resp, err := s.SendVerifyCodeH.Handle(ctx, message)
+	if err != nil {
+		return nil, goagrpc.EncodeError(err)
+	}
+	return resp.(*user_methodpb.SendVerifyCodeResponse), nil
 }

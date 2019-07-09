@@ -14,6 +14,8 @@ func init(){
 		Password:"",
 		DB: 0,
 	})
-	pong, err := RedisClient.Ping().Result()
-	log.Fatalln("",pong,err)
+	_, err := RedisClient.Ping().Result()
+	if err != nil {
+		log.Fatalln("",err)
+	}
 }

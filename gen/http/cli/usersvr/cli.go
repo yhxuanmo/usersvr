@@ -23,7 +23,7 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `user-method (register|show|login|change-info|change-password|forgot-password|change-email)
+	return `user-method (register|show|login|change-info|change-password|forgot-password|change-email|send-verify-code)
 `
 }
 
@@ -58,17 +58,23 @@ func ParseEndpoint(
 		userMethodLoginFlags    = flag.NewFlagSet("login", flag.ExitOnError)
 		userMethodLoginBodyFlag = userMethodLoginFlags.String("body", "REQUIRED", "")
 
-		userMethodChangeInfoFlags    = flag.NewFlagSet("change-info", flag.ExitOnError)
-		userMethodChangeInfoBodyFlag = userMethodChangeInfoFlags.String("body", "REQUIRED", "")
+		userMethodChangeInfoFlags     = flag.NewFlagSet("change-info", flag.ExitOnError)
+		userMethodChangeInfoBodyFlag  = userMethodChangeInfoFlags.String("body", "REQUIRED", "")
+		userMethodChangeInfoTokenFlag = userMethodChangeInfoFlags.String("token", "REQUIRED", "")
 
-		userMethodChangePasswordFlags    = flag.NewFlagSet("change-password", flag.ExitOnError)
-		userMethodChangePasswordBodyFlag = userMethodChangePasswordFlags.String("body", "REQUIRED", "")
+		userMethodChangePasswordFlags     = flag.NewFlagSet("change-password", flag.ExitOnError)
+		userMethodChangePasswordBodyFlag  = userMethodChangePasswordFlags.String("body", "REQUIRED", "")
+		userMethodChangePasswordTokenFlag = userMethodChangePasswordFlags.String("token", "REQUIRED", "")
 
 		userMethodForgotPasswordFlags    = flag.NewFlagSet("forgot-password", flag.ExitOnError)
 		userMethodForgotPasswordBodyFlag = userMethodForgotPasswordFlags.String("body", "REQUIRED", "")
 
-		userMethodChangeEmailFlags    = flag.NewFlagSet("change-email", flag.ExitOnError)
-		userMethodChangeEmailBodyFlag = userMethodChangeEmailFlags.String("body", "REQUIRED", "")
+		userMethodChangeEmailFlags     = flag.NewFlagSet("change-email", flag.ExitOnError)
+		userMethodChangeEmailBodyFlag  = userMethodChangeEmailFlags.String("body", "REQUIRED", "")
+		userMethodChangeEmailTokenFlag = userMethodChangeEmailFlags.String("token", "REQUIRED", "")
+
+		userMethodSendVerifyCodeFlags    = flag.NewFlagSet("send-verify-code", flag.ExitOnError)
+		userMethodSendVerifyCodeBodyFlag = userMethodSendVerifyCodeFlags.String("body", "REQUIRED", "")
 	)
 	userMethodFlags.Usage = userMethodUsage
 	userMethodRegisterFlags.Usage = userMethodRegisterUsage
@@ -78,6 +84,7 @@ func ParseEndpoint(
 	userMethodChangePasswordFlags.Usage = userMethodChangePasswordUsage
 	userMethodForgotPasswordFlags.Usage = userMethodForgotPasswordUsage
 	userMethodChangeEmailFlags.Usage = userMethodChangeEmailUsage
+	userMethodSendVerifyCodeFlags.Usage = userMethodSendVerifyCodeUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -134,6 +141,9 @@ func ParseEndpoint(
 			case "change-email":
 				epf = userMethodChangeEmailFlags
 
+			case "send-verify-code":
+				epf = userMethodSendVerifyCodeFlags
+
 			}
 
 		}
@@ -170,16 +180,19 @@ func ParseEndpoint(
 				data, err = usermethodc.BuildLoginPayload(*userMethodLoginBodyFlag)
 			case "change-info":
 				endpoint = c.ChangeInfo()
-				data, err = usermethodc.BuildChangeInfoPayload(*userMethodChangeInfoBodyFlag)
+				data, err = usermethodc.BuildChangeInfoPayload(*userMethodChangeInfoBodyFlag, *userMethodChangeInfoTokenFlag)
 			case "change-password":
 				endpoint = c.ChangePassword()
-				data, err = usermethodc.BuildChangePasswordPayload(*userMethodChangePasswordBodyFlag)
+				data, err = usermethodc.BuildChangePasswordPayload(*userMethodChangePasswordBodyFlag, *userMethodChangePasswordTokenFlag)
 			case "forgot-password":
 				endpoint = c.ForgotPassword()
 				data, err = usermethodc.BuildForgotPasswordPayload(*userMethodForgotPasswordBodyFlag)
 			case "change-email":
 				endpoint = c.ChangeEmail()
-				data, err = usermethodc.BuildChangeEmailPayload(*userMethodChangeEmailBodyFlag)
+				data, err = usermethodc.BuildChangeEmailPayload(*userMethodChangeEmailBodyFlag, *userMethodChangeEmailTokenFlag)
+			case "send-verify-code":
+				endpoint = c.SendVerifyCode()
+				data, err = usermethodc.BuildSendVerifyCodePayload(*userMethodSendVerifyCodeBodyFlag)
 			}
 		}
 	}
@@ -205,6 +218,7 @@ COMMAND:
     change-password: Remove bottle from storage
     forgot-password: Rate bottles by IDs
     change-email: Add n number of bottles and return their IDs. This is a multipart request and each part has field name 'bottle' and contains the encoded bottle info to be added.
+    send-verify-code: send verify code to email
 
 Additional help:
     %s user-method COMMAND --help
@@ -232,7 +246,7 @@ Show user info
     -token STRING: 
 
 Example:
-    `+os.Args[0]+` user-method show --view "default" --token "Consequatur culpa sit aut corporis iusto sequi."
+    `+os.Args[0]+` user-method show --view "tiny" --token "Esse dolores."
 `, os.Args[0])
 }
 
@@ -251,30 +265,32 @@ Example:
 }
 
 func userMethodChangeInfoUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] user-method change-info -body JSON
+	fmt.Fprintf(os.Stderr, `%s [flags] user-method change-info -body JSON -token STRING
 
 Add new bottle and return its ID.
     -body JSON: 
+    -token STRING: 
 
 Example:
     `+os.Args[0]+` user-method change-info --body '{
-      "email": "nwb",
-      "icon": "Red wine blend with an emphasis on the Cabernet Franc grape and including other Bordeaux grape varietals and some Syrah",
-      "name": "Blue\'s Cuvee"
-   }'
+      "icon": "Quia itaque dolorum repellat in magnam quia.",
+      "name": "Ut voluptatem quia laudantium."
+   }' --token "Distinctio dolorem tempore neque dolorem voluptatem optio."
 `, os.Args[0])
 }
 
 func userMethodChangePasswordUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] user-method change-password -body JSON
+	fmt.Fprintf(os.Stderr, `%s [flags] user-method change-password -body JSON -token STRING
 
 Remove bottle from storage
     -body JSON: 
+    -token STRING: 
 
 Example:
     `+os.Args[0]+` user-method change-password --body '{
+      "newPassword": "new password",
       "oldPassword": "old password"
-   }'
+   }' --token "Doloribus qui consequatur."
 `, os.Args[0])
 }
 
@@ -286,20 +302,36 @@ Rate bottles by IDs
 
 Example:
     `+os.Args[0]+` user-method forgot-password --body '{
-      "code": "1234"
+      "code": "1234",
+      "email": "Repellat cum quos dicta delectus.",
+      "newPassword": "Amet non ratione."
    }'
 `, os.Args[0])
 }
 
 func userMethodChangeEmailUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] user-method change-email -body JSON
+	fmt.Fprintf(os.Stderr, `%s [flags] user-method change-email -body JSON -token STRING
 
 Add n number of bottles and return their IDs. This is a multipart request and each part has field name 'bottle' and contains the encoded bottle info to be added.
     -body JSON: 
+    -token STRING: 
 
 Example:
     `+os.Args[0]+` user-method change-email --body '{
-      "email": "Omnis distinctio dolorem tempore."
+      "email": "Doloremque enim."
+   }' --token "Voluptate consequatur asperiores aliquid nemo sit architecto."
+`, os.Args[0])
+}
+
+func userMethodSendVerifyCodeUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] user-method send-verify-code -body JSON
+
+send verify code to email
+    -body JSON: 
+
+Example:
+    `+os.Args[0]+` user-method send-verify-code --body '{
+      "email": "Nostrum ipsam dolores."
    }'
 `, os.Args[0])
 }

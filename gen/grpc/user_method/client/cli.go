@@ -75,28 +75,32 @@ func BuildLoginPayload(userMethodLoginMessage string) (*usermethod.LoginPayload,
 
 // BuildChangeInfoPayload builds the payload for the userMethod changeInfo
 // endpoint from CLI flags.
-func BuildChangeInfoPayload(userMethodChangeInfoMessage string) (*usermethod.User, error) {
+func BuildChangeInfoPayload(userMethodChangeInfoMessage string, userMethodChangeInfoToken string) (*usermethod.ChangeInfoPayload, error) {
 	var err error
 	var message user_methodpb.ChangeInfoRequest
 	{
 		if userMethodChangeInfoMessage != "" {
 			err = json.Unmarshal([]byte(userMethodChangeInfoMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, example of valid JSON:\n%s", "'{\n      \"email\": \"po2\",\n      \"icon\": \"Red wine blend with an emphasis on the Cabernet Franc grape and including other Bordeaux grape varietals and some Syrah\",\n      \"name\": \"Blue\\'s Cuvee\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, example of valid JSON:\n%s", "'{\n      \"icon\": \"Qui et nostrum.\",\n      \"name\": \"Dolorem et quasi quas ab.\"\n   }'")
 			}
 		}
 	}
-	v := &usermethod.User{
-		Name:  message.Name,
-		Email: message.Email,
-		Icon:  message.Icon,
+	var token string
+	{
+		token = userMethodChangeInfoToken
 	}
+	v := &usermethod.ChangeInfoPayload{
+		Name: message.Name,
+		Icon: message.Icon,
+	}
+	v.Token = token
 	return v, nil
 }
 
 // BuildChangePasswordPayload builds the payload for the userMethod
 // changePassword endpoint from CLI flags.
-func BuildChangePasswordPayload(userMethodChangePasswordMessage string) (*usermethod.ChangePasswordPayload, error) {
+func BuildChangePasswordPayload(userMethodChangePasswordMessage string, userMethodChangePasswordToken string) (*usermethod.ChangePasswordPayload, error) {
 	var err error
 	var message user_methodpb.ChangePasswordRequest
 	{
@@ -107,10 +111,15 @@ func BuildChangePasswordPayload(userMethodChangePasswordMessage string) (*userme
 			}
 		}
 	}
+	var token string
+	{
+		token = userMethodChangePasswordToken
+	}
 	v := &usermethod.ChangePasswordPayload{
 		OldPassword: message.OldPassword,
 		NewPassword: message.NewPassword,
 	}
+	v.Token = token
 	return v, nil
 }
 
@@ -123,31 +132,56 @@ func BuildForgotPasswordPayload(userMethodForgotPasswordMessage string) (*userme
 		if userMethodForgotPasswordMessage != "" {
 			err = json.Unmarshal([]byte(userMethodForgotPasswordMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, example of valid JSON:\n%s", "'{\n      \"code\": \"1234\",\n      \"newPassword\": \"Id voluptatem quibusdam nulla autem.\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, example of valid JSON:\n%s", "'{\n      \"code\": \"1234\",\n      \"email\": \"Id deleniti.\",\n      \"newPassword\": \"Corporis autem ut.\"\n   }'")
 			}
 		}
 	}
 	v := &usermethod.ForgotPasswordPayload{
 		Code:        message.Code,
 		NewPassword: message.NewPassword,
+		Email:       message.Email,
 	}
 	return v, nil
 }
 
 // BuildChangeEmailPayload builds the payload for the userMethod changeEmail
 // endpoint from CLI flags.
-func BuildChangeEmailPayload(userMethodChangeEmailMessage string) (*usermethod.ChangeEmailPayload, error) {
+func BuildChangeEmailPayload(userMethodChangeEmailMessage string, userMethodChangeEmailToken string) (*usermethod.ChangeEmailPayload, error) {
 	var err error
 	var message user_methodpb.ChangeEmailRequest
 	{
 		if userMethodChangeEmailMessage != "" {
 			err = json.Unmarshal([]byte(userMethodChangeEmailMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, example of valid JSON:\n%s", "'{\n      \"email\": \"Dolorem repudiandae blanditiis ab molestiae quidem ut.\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, example of valid JSON:\n%s", "'{\n      \"email\": \"Accusamus rerum.\"\n   }'")
 			}
 		}
 	}
+	var token string
+	{
+		token = userMethodChangeEmailToken
+	}
 	v := &usermethod.ChangeEmailPayload{
+		Email: message.Email,
+	}
+	v.Token = token
+	return v, nil
+}
+
+// BuildSendVerifyCodePayload builds the payload for the userMethod
+// sendVerifyCode endpoint from CLI flags.
+func BuildSendVerifyCodePayload(userMethodSendVerifyCodeMessage string) (*usermethod.SendVerifyCodePayload, error) {
+	var err error
+	var message user_methodpb.SendVerifyCodeRequest
+	{
+		if userMethodSendVerifyCodeMessage != "" {
+			err = json.Unmarshal([]byte(userMethodSendVerifyCodeMessage), &message)
+			if err != nil {
+				return nil, fmt.Errorf("invalid JSON for message, example of valid JSON:\n%s", "'{\n      \"email\": \"Sint quos.\"\n   }'")
+			}
+		}
+	}
+	v := &usermethod.SendVerifyCodePayload{
 		Email: message.Email,
 	}
 	return v, nil

@@ -137,22 +137,33 @@ func BuildChangeInfoFunc(grpccli user_methodpb.UserMethodClient, cliopts ...grpc
 // EncodeChangeInfoRequest encodes requests sent to userMethod changeInfo
 // endpoint.
 func EncodeChangeInfoRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
-	payload, ok := v.(*usermethod.User)
+	payload, ok := v.(*usermethod.ChangeInfoPayload)
 	if !ok {
-		return nil, goagrpc.ErrInvalidType("userMethod", "changeInfo", "*usermethod.User", v)
+		return nil, goagrpc.ErrInvalidType("userMethod", "changeInfo", "*usermethod.ChangeInfoPayload", v)
 	}
+	(*md).Append("authorization", payload.Token)
 	return NewChangeInfoRequest(payload), nil
 }
 
 // DecodeChangeInfoResponse decodes responses from the userMethod changeInfo
 // endpoint.
 func DecodeChangeInfoResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	var view string
+	{
+		if vals := hdr.Get("goa-view"); len(vals) > 0 {
+			view = vals[0]
+		}
+	}
 	message, ok := v.(*user_methodpb.ChangeInfoResponse)
 	if !ok {
 		return nil, goagrpc.ErrInvalidType("userMethod", "changeInfo", "*user_methodpb.ChangeInfoResponse", v)
 	}
 	res := NewChangeInfoResult(message)
-	return res, nil
+	vres := &usermethodviews.UserInfo{Projected: res, View: view}
+	if err := usermethodviews.ValidateUserInfo(vres); err != nil {
+		return nil, err
+	}
+	return usermethod.NewUserInfo(vres), nil
 }
 
 // BuildChangePasswordFunc builds the remote method to invoke for "userMethod"
@@ -173,7 +184,19 @@ func EncodeChangePasswordRequest(ctx context.Context, v interface{}, md *metadat
 	if !ok {
 		return nil, goagrpc.ErrInvalidType("userMethod", "changePassword", "*usermethod.ChangePasswordPayload", v)
 	}
+	(*md).Append("authorization", payload.Token)
 	return NewChangePasswordRequest(payload), nil
+}
+
+// DecodeChangePasswordResponse decodes responses from the userMethod
+// changePassword endpoint.
+func DecodeChangePasswordResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	message, ok := v.(*user_methodpb.ChangePasswordResponse)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("userMethod", "changePassword", "*user_methodpb.ChangePasswordResponse", v)
+	}
+	res := NewChangePasswordResult(message)
+	return res, nil
 }
 
 // BuildForgotPasswordFunc builds the remote method to invoke for "userMethod"
@@ -197,6 +220,17 @@ func EncodeForgotPasswordRequest(ctx context.Context, v interface{}, md *metadat
 	return NewForgotPasswordRequest(payload), nil
 }
 
+// DecodeForgotPasswordResponse decodes responses from the userMethod
+// forgotPassword endpoint.
+func DecodeForgotPasswordResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	message, ok := v.(*user_methodpb.ForgotPasswordResponse)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("userMethod", "forgotPassword", "*user_methodpb.ForgotPasswordResponse", v)
+	}
+	res := NewForgotPasswordResult(message)
+	return res, nil
+}
+
 // BuildChangeEmailFunc builds the remote method to invoke for "userMethod"
 // service "changeEmail" endpoint.
 func BuildChangeEmailFunc(grpccli user_methodpb.UserMethodClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
@@ -215,6 +249,7 @@ func EncodeChangeEmailRequest(ctx context.Context, v interface{}, md *metadata.M
 	if !ok {
 		return nil, goagrpc.ErrInvalidType("userMethod", "changeEmail", "*usermethod.ChangeEmailPayload", v)
 	}
+	(*md).Append("authorization", payload.Token)
 	return NewChangeEmailRequest(payload), nil
 }
 
@@ -226,5 +261,37 @@ func DecodeChangeEmailResponse(ctx context.Context, v interface{}, hdr, trlr met
 		return nil, goagrpc.ErrInvalidType("userMethod", "changeEmail", "*user_methodpb.ChangeEmailResponse", v)
 	}
 	res := NewChangeEmailResult(message)
+	return res, nil
+}
+
+// BuildSendVerifyCodeFunc builds the remote method to invoke for "userMethod"
+// service "sendVerifyCode" endpoint.
+func BuildSendVerifyCodeFunc(grpccli user_methodpb.UserMethodClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
+	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
+		for _, opt := range cliopts {
+			opts = append(opts, opt)
+		}
+		return grpccli.SendVerifyCode(ctx, reqpb.(*user_methodpb.SendVerifyCodeRequest), opts...)
+	}
+}
+
+// EncodeSendVerifyCodeRequest encodes requests sent to userMethod
+// sendVerifyCode endpoint.
+func EncodeSendVerifyCodeRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
+	payload, ok := v.(*usermethod.SendVerifyCodePayload)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("userMethod", "sendVerifyCode", "*usermethod.SendVerifyCodePayload", v)
+	}
+	return NewSendVerifyCodeRequest(payload), nil
+}
+
+// DecodeSendVerifyCodeResponse decodes responses from the userMethod
+// sendVerifyCode endpoint.
+func DecodeSendVerifyCodeResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	message, ok := v.(*user_methodpb.SendVerifyCodeResponse)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("userMethod", "sendVerifyCode", "*user_methodpb.SendVerifyCodeResponse", v)
+	}
+	res := NewSendVerifyCodeResult(message)
 	return res, nil
 }

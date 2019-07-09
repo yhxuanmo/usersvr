@@ -23,3 +23,12 @@ func FindOneUser(Email string)(*model.User, error){
 	}
 	return &user, nil
 }
+
+
+func UpdateUser(User *model.User, UpdataInfo map[string]interface{}) (*model.User, error) {
+	err := PgClient.Model(&User).Updates(UpdataInfo).Error
+	if err != nil {
+		return User, err
+	}
+	return User, nil
+}

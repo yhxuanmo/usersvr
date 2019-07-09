@@ -23,6 +23,7 @@ type Endpoints struct {
 	ChangePassword goa.Endpoint
 	ForgotPassword goa.Endpoint
 	ChangeEmail    goa.Endpoint
+	SendVerifyCode goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "userMethod" service with endpoints.
@@ -33,10 +34,11 @@ func NewEndpoints(s Service) *Endpoints {
 		Register:       NewRegisterEndpoint(s),
 		Show:           NewShowEndpoint(s, a.JWTAuth),
 		Login:          NewLoginEndpoint(s),
-		ChangeInfo:     NewChangeInfoEndpoint(s),
-		ChangePassword: NewChangePasswordEndpoint(s),
+		ChangeInfo:     NewChangeInfoEndpoint(s, a.JWTAuth),
+		ChangePassword: NewChangePasswordEndpoint(s, a.JWTAuth),
 		ForgotPassword: NewForgotPasswordEndpoint(s),
-		ChangeEmail:    NewChangeEmailEndpoint(s),
+		ChangeEmail:    NewChangeEmailEndpoint(s, a.JWTAuth),
+		SendVerifyCode: NewSendVerifyCodeEndpoint(s),
 	}
 }
 
@@ -49,6 +51,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.ChangePassword = m(e.ChangePassword)
 	e.ForgotPassword = m(e.ForgotPassword)
 	e.ChangeEmail = m(e.ChangeEmail)
+	e.SendVerifyCode = m(e.SendVerifyCode)
 }
 
 // NewRegisterEndpoint returns an endpoint function that calls the method
@@ -95,19 +98,44 @@ func NewLoginEndpoint(s Service) goa.Endpoint {
 
 // NewChangeInfoEndpoint returns an endpoint function that calls the method
 // "changeInfo" of service "userMethod".
-func NewChangeInfoEndpoint(s Service) goa.Endpoint {
+func NewChangeInfoEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*User)
-		return s.ChangeInfo(ctx, p)
+		p := req.(*ChangeInfoPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authJWTFn(ctx, p.Token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		res, view, err := s.ChangeInfo(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedUserInfo(res, view)
+		return vres, nil
 	}
 }
 
 // NewChangePasswordEndpoint returns an endpoint function that calls the method
 // "changePassword" of service "userMethod".
-func NewChangePasswordEndpoint(s Service) goa.Endpoint {
+func NewChangePasswordEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*ChangePasswordPayload)
-		return nil, s.ChangePassword(ctx, p)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authJWTFn(ctx, p.Token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.ChangePassword(ctx, p)
 	}
 }
 
@@ -116,15 +144,34 @@ func NewChangePasswordEndpoint(s Service) goa.Endpoint {
 func NewForgotPasswordEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*ForgotPasswordPayload)
-		return nil, s.ForgotPassword(ctx, p)
+		return s.ForgotPassword(ctx, p)
 	}
 }
 
 // NewChangeEmailEndpoint returns an endpoint function that calls the method
 // "changeEmail" of service "userMethod".
-func NewChangeEmailEndpoint(s Service) goa.Endpoint {
+func NewChangeEmailEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*ChangeEmailPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authJWTFn(ctx, p.Token, &sc)
+		if err != nil {
+			return nil, err
+		}
 		return s.ChangeEmail(ctx, p)
+	}
+}
+
+// NewSendVerifyCodeEndpoint returns an endpoint function that calls the method
+// "sendVerifyCode" of service "userMethod".
+func NewSendVerifyCodeEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*SendVerifyCodePayload)
+		return s.SendVerifyCode(ctx, p)
 	}
 }

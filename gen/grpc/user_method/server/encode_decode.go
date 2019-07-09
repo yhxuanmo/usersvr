@@ -133,10 +133,12 @@ func DecodeLoginRequest(ctx context.Context, v interface{}, md metadata.MD) (int
 // EncodeChangeInfoResponse encodes responses from the "userMethod" service
 // "changeInfo" endpoint.
 func EncodeChangeInfoResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.(string)
+	vres, ok := v.(*usermethodviews.UserInfo)
 	if !ok {
-		return nil, goagrpc.ErrInvalidType("userMethod", "changeInfo", "string", v)
+		return nil, goagrpc.ErrInvalidType("userMethod", "changeInfo", "*usermethodviews.UserInfo", v)
 	}
+	result := vres.Projected
+	(*hdr).Append("goa-view", vres.View)
 	resp := NewChangeInfoResponse(result)
 	return resp, nil
 }
@@ -145,6 +147,20 @@ func EncodeChangeInfoResponse(ctx context.Context, v interface{}, hdr, trlr *met
 // "changeInfo" endpoint.
 func DecodeChangeInfoRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
 	var (
+		token string
+		err   error
+	)
+	{
+		if vals := md.Get("authorization"); len(vals) == 0 {
+			err = goa.MergeErrors(err, goa.MissingFieldError("authorization", "metadata"))
+		} else {
+			token = vals[0]
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	var (
 		message *user_methodpb.ChangeInfoRequest
 		ok      bool
 	)
@@ -152,13 +168,15 @@ func DecodeChangeInfoRequest(ctx context.Context, v interface{}, md metadata.MD)
 		if message, ok = v.(*user_methodpb.ChangeInfoRequest); !ok {
 			return nil, goagrpc.ErrInvalidType("userMethod", "changeInfo", "*user_methodpb.ChangeInfoRequest", v)
 		}
-		if err := ValidateChangeInfoRequest(message); err != nil {
-			return nil, err
-		}
 	}
-	var payload *usermethod.User
+	var payload *usermethod.ChangeInfoPayload
 	{
-		payload = NewChangeInfoPayload(message)
+		payload = NewChangeInfoPayload(message, token)
+		if strings.Contains(payload.Token, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Token, " ", 2)[1]
+			payload.Token = cred
+		}
 	}
 	return payload, nil
 }
@@ -166,13 +184,31 @@ func DecodeChangeInfoRequest(ctx context.Context, v interface{}, md metadata.MD)
 // EncodeChangePasswordResponse encodes responses from the "userMethod" service
 // "changePassword" endpoint.
 func EncodeChangePasswordResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	resp := NewChangePasswordResponse()
+	result, ok := v.(*usermethod.ResponseResult)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("userMethod", "changePassword", "*usermethod.ResponseResult", v)
+	}
+	resp := NewChangePasswordResponse(result)
 	return resp, nil
 }
 
 // DecodeChangePasswordRequest decodes requests sent to "userMethod" service
 // "changePassword" endpoint.
 func DecodeChangePasswordRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+	var (
+		token string
+		err   error
+	)
+	{
+		if vals := md.Get("authorization"); len(vals) == 0 {
+			err = goa.MergeErrors(err, goa.MissingFieldError("authorization", "metadata"))
+		} else {
+			token = vals[0]
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
 	var (
 		message *user_methodpb.ChangePasswordRequest
 		ok      bool
@@ -184,7 +220,12 @@ func DecodeChangePasswordRequest(ctx context.Context, v interface{}, md metadata
 	}
 	var payload *usermethod.ChangePasswordPayload
 	{
-		payload = NewChangePasswordPayload(message)
+		payload = NewChangePasswordPayload(message, token)
+		if strings.Contains(payload.Token, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Token, " ", 2)[1]
+			payload.Token = cred
+		}
 	}
 	return payload, nil
 }
@@ -192,7 +233,11 @@ func DecodeChangePasswordRequest(ctx context.Context, v interface{}, md metadata
 // EncodeForgotPasswordResponse encodes responses from the "userMethod" service
 // "forgotPassword" endpoint.
 func EncodeForgotPasswordResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	resp := NewForgotPasswordResponse()
+	result, ok := v.(*usermethod.ResponseResult)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("userMethod", "forgotPassword", "*usermethod.ResponseResult", v)
+	}
+	resp := NewForgotPasswordResponse(result)
 	return resp, nil
 }
 
@@ -218,9 +263,9 @@ func DecodeForgotPasswordRequest(ctx context.Context, v interface{}, md metadata
 // EncodeChangeEmailResponse encodes responses from the "userMethod" service
 // "changeEmail" endpoint.
 func EncodeChangeEmailResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.(string)
+	result, ok := v.(*usermethod.ResponseResult)
 	if !ok {
-		return nil, goagrpc.ErrInvalidType("userMethod", "changeEmail", "string", v)
+		return nil, goagrpc.ErrInvalidType("userMethod", "changeEmail", "*usermethod.ResponseResult", v)
 	}
 	resp := NewChangeEmailResponse(result)
 	return resp, nil
@@ -229,6 +274,20 @@ func EncodeChangeEmailResponse(ctx context.Context, v interface{}, hdr, trlr *me
 // DecodeChangeEmailRequest decodes requests sent to "userMethod" service
 // "changeEmail" endpoint.
 func DecodeChangeEmailRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+	var (
+		token string
+		err   error
+	)
+	{
+		if vals := md.Get("authorization"); len(vals) == 0 {
+			err = goa.MergeErrors(err, goa.MissingFieldError("authorization", "metadata"))
+		} else {
+			token = vals[0]
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
 	var (
 		message *user_methodpb.ChangeEmailRequest
 		ok      bool
@@ -240,7 +299,42 @@ func DecodeChangeEmailRequest(ctx context.Context, v interface{}, md metadata.MD
 	}
 	var payload *usermethod.ChangeEmailPayload
 	{
-		payload = NewChangeEmailPayload(message)
+		payload = NewChangeEmailPayload(message, token)
+		if strings.Contains(payload.Token, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Token, " ", 2)[1]
+			payload.Token = cred
+		}
+	}
+	return payload, nil
+}
+
+// EncodeSendVerifyCodeResponse encodes responses from the "userMethod" service
+// "sendVerifyCode" endpoint.
+func EncodeSendVerifyCodeResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
+	result, ok := v.(*usermethod.ResponseResult)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("userMethod", "sendVerifyCode", "*usermethod.ResponseResult", v)
+	}
+	resp := NewSendVerifyCodeResponse(result)
+	return resp, nil
+}
+
+// DecodeSendVerifyCodeRequest decodes requests sent to "userMethod" service
+// "sendVerifyCode" endpoint.
+func DecodeSendVerifyCodeRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+	var (
+		message *user_methodpb.SendVerifyCodeRequest
+		ok      bool
+	)
+	{
+		if message, ok = v.(*user_methodpb.SendVerifyCodeRequest); !ok {
+			return nil, goagrpc.ErrInvalidType("userMethod", "sendVerifyCode", "*user_methodpb.SendVerifyCodeRequest", v)
+		}
+	}
+	var payload *usermethod.SendVerifyCodePayload
+	{
+		payload = NewSendVerifyCodePayload(message)
 	}
 	return payload, nil
 }

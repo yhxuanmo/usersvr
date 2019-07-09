@@ -134,8 +134,17 @@ var _ = Service("userMethod", func() {
 
 	Method("changeInfo", func() {
 		Description("Add new bottle and return its ID.")
-		Payload(User)
-		Result(String)
+		Payload(func() {
+			TokenField(1, "token", String, func() {
+				Description("JWT used for authentication")
+			})
+
+			Field(2, "name", String, "name of user")
+			Field(3, "icon", String, "icon of user")
+			Required("token", "name", "icon")
+		})
+		Security(JWTAuth)
+		Result(UserInfo)
 		HTTP(func() {
 			POST("/change/info")
 			Response(StatusOK)
@@ -147,16 +156,21 @@ var _ = Service("userMethod", func() {
 
 	Method("changePassword", func() {
 		Description("Remove bottle from storage")
+		Security(JWTAuth)
 		Payload(func() {
-			PasswordField(1,"oldPassword", String, "old password", func() {
+			TokenField(1, "token", String, func() {
+				Description("JWT used for authentication")
+			})
+			Field(2,"oldPassword", String, "old password", func() {
 				Example("old password")
 			})
-			PasswordField(2, "newPassword", String, "new password", func() {
+			Field(3, "newPassword", String, "new password", func() {
 				Example("new password")
 			})
-			Required("oldPassword", "newPassword")
+			Required("token", "oldPassword", "newPassword")
 		})
 		Error("not_found", NotFound, "Bottle not found")
+		Result(ResponseResult)
 		HTTP(func() {
 			POST("/change/password")
 			Response(StatusOK)
@@ -172,9 +186,11 @@ var _ = Service("userMethod", func() {
 			Field(1, "code", String, func() {
 				Example("1234")
 			})
-			PasswordField(2,"newPassword", String)
-			Required("code", "newPassword")
+			Field(2,"newPassword", String)
+			Field(3, "email", String)
+			Required("code", "newPassword", "email")
 		})
+		Result(ResponseResult)
 		HTTP(func() {
 			POST("/forgot/password")
 			Response(StatusOK)
@@ -187,13 +203,33 @@ var _ = Service("userMethod", func() {
 	Method("changeEmail", func() {
 		Description("Add n number of bottles and return their IDs. This is a multipart request and each part has field name 'bottle' and contains the encoded bottle info to be added.")
 		Payload(func() {
-			Field(1,"email",String)
-			Required("email")
+			TokenField(1, "token", String, func() {
+				Description("JWT used for authentication")
+			})
+			Field(2,"email",String)
+			Required("token", "email")
 		})
+		Security(JWTAuth)
 		Error("email_exist", EmailExist, "email is existed")
-		Result(String)
+		Result(ResponseResult)
 		HTTP(func() {
 			POST("/change/email")
+			Response(StatusOK)
+		})
+		GRPC(func() {
+			Response(CodeOK)
+		})
+	})
+
+	Method("sendVerifyCode", func() {
+		Description("send verify code to email")
+		Payload(func() {
+			Field(1, "email", String)
+			Required("email")
+		})
+		Result(ResponseResult)
+		HTTP(func() {
+			POST("/send/code")
 			Response(StatusOK)
 		})
 		GRPC(func() {

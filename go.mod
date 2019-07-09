@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go v0.39.0 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20190515213511-eb9f6a1743f3 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/go-redis/redis v6.15.2+incompatible // indirect
+	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/goadesign/gorma v0.0.0-20190521182631-f82e6291f30f
 	github.com/golang/mock v1.3.1 // indirect
 	github.com/golang/protobuf v1.3.1
@@ -36,5 +36,6 @@ require (
 	google.golang.org/appengine v1.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20190605220351-eb0b1bdb6ae6 // indirect
 	google.golang.org/grpc v1.21.1
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	honnef.co/go/tools v0.0.0-20190605142022-0a11fc526260 // indirect
 )
