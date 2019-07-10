@@ -1,5 +1,6 @@
 # usersvr
 用户服务  golang学习
+项目参考goa[官方example](https://github.com/goadesign/examples)学习框架使用
 
 ### 使用方法
 #### 1.环境 golang 1.12+
