@@ -92,6 +92,7 @@ type ShowResponseBody struct {
 	// Description of bottle
 	Icon     *string `form:"icon,omitempty" json:"icon,omitempty" xml:"icon,omitempty"`
 	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
+	Activate *bool   `form:"activate,omitempty" json:"activate,omitempty" xml:"activate,omitempty"`
 }
 
 // LoginResponseBody is the type of the "userMethod" service "login" endpoint
@@ -113,6 +114,7 @@ type ChangeInfoResponseBody struct {
 	// Description of bottle
 	Icon     *string `form:"icon,omitempty" json:"icon,omitempty" xml:"icon,omitempty"`
 	Password *string `form:"password,omitempty" json:"password,omitempty" xml:"password,omitempty"`
+	Activate *bool   `form:"activate,omitempty" json:"activate,omitempty" xml:"activate,omitempty"`
 }
 
 // ChangePasswordResponseBody is the type of the "userMethod" service
@@ -148,6 +150,16 @@ type ChangeEmailResponseBody struct {
 // SendVerifyCodeResponseBody is the type of the "userMethod" service
 // "sendVerifyCode" endpoint HTTP response body.
 type SendVerifyCodeResponseBody struct {
+	// code
+	Code *int `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// message
+	Message *string           `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	Data    map[string]string `form:"data,omitempty" json:"data,omitempty" xml:"data,omitempty"`
+}
+
+// ActivateResponseBody is the type of the "userMethod" service "activate"
+// endpoint HTTP response body.
+type ActivateResponseBody struct {
 	// code
 	Code *int `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// message
@@ -260,6 +272,7 @@ func NewShowUserInfoOK(body *ShowResponseBody) *usermethodviews.UserInfoView {
 		Email:    body.Email,
 		Icon:     body.Icon,
 		Password: body.Password,
+		Activate: body.Activate,
 	}
 	return v
 }
@@ -291,6 +304,7 @@ func NewChangeInfoUserInfoOK(body *ChangeInfoResponseBody) *usermethodviews.User
 		Email:    body.Email,
 		Icon:     body.Icon,
 		Password: body.Password,
+		Activate: body.Activate,
 	}
 	return v
 }
@@ -367,6 +381,24 @@ func NewSendVerifyCodeResponseResultOK(body *SendVerifyCodeResponseBody) *userme
 	return v
 }
 
+// NewActivateResponseResultOK builds a "userMethod" service "activate"
+// endpoint result from a HTTP "OK" response.
+func NewActivateResponseResultOK(body *ActivateResponseBody) *usermethod.ResponseResult {
+	v := &usermethod.ResponseResult{
+		Code:    *body.Code,
+		Message: body.Message,
+	}
+	if body.Data != nil {
+		v.Data = make(map[string]string, len(body.Data))
+		for key, val := range body.Data {
+			tk := key
+			tv := val
+			v.Data[tk] = tv
+		}
+	}
+	return v
+}
+
 // ValidateRegisterResponseBody runs the validations defined on
 // RegisterResponseBody
 func ValidateRegisterResponseBody(body *RegisterResponseBody) (err error) {
@@ -414,6 +446,15 @@ func ValidateChangeEmailResponseBody(body *ChangeEmailResponseBody) (err error) 
 // ValidateSendVerifyCodeResponseBody runs the validations defined on
 // SendVerifyCodeResponseBody
 func ValidateSendVerifyCodeResponseBody(body *SendVerifyCodeResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	return
+}
+
+// ValidateActivateResponseBody runs the validations defined on
+// ActivateResponseBody
+func ValidateActivateResponseBody(body *ActivateResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

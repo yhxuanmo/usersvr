@@ -23,7 +23,7 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `user-method (register|show|login|change-info|change-password|forgot-password|change-email|send-verify-code)
+	return `user-method (register|show|login|change-info|change-password|forgot-password|change-email|send-verify-code|activate)
 `
 }
 
@@ -75,6 +75,9 @@ func ParseEndpoint(
 
 		userMethodSendVerifyCodeFlags    = flag.NewFlagSet("send-verify-code", flag.ExitOnError)
 		userMethodSendVerifyCodeBodyFlag = userMethodSendVerifyCodeFlags.String("body", "REQUIRED", "")
+
+		userMethodActivateFlags    = flag.NewFlagSet("activate", flag.ExitOnError)
+		userMethodActivateCodeFlag = userMethodActivateFlags.String("code", "REQUIRED", "")
 	)
 	userMethodFlags.Usage = userMethodUsage
 	userMethodRegisterFlags.Usage = userMethodRegisterUsage
@@ -85,6 +88,7 @@ func ParseEndpoint(
 	userMethodForgotPasswordFlags.Usage = userMethodForgotPasswordUsage
 	userMethodChangeEmailFlags.Usage = userMethodChangeEmailUsage
 	userMethodSendVerifyCodeFlags.Usage = userMethodSendVerifyCodeUsage
+	userMethodActivateFlags.Usage = userMethodActivateUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -144,6 +148,9 @@ func ParseEndpoint(
 			case "send-verify-code":
 				epf = userMethodSendVerifyCodeFlags
 
+			case "activate":
+				epf = userMethodActivateFlags
+
 			}
 
 		}
@@ -193,6 +200,9 @@ func ParseEndpoint(
 			case "send-verify-code":
 				endpoint = c.SendVerifyCode()
 				data, err = usermethodc.BuildSendVerifyCodePayload(*userMethodSendVerifyCodeBodyFlag)
+			case "activate":
+				endpoint = c.Activate()
+				data, err = usermethodc.BuildActivatePayload(*userMethodActivateCodeFlag)
 			}
 		}
 	}
@@ -219,6 +229,7 @@ COMMAND:
     forgot-password: Rate bottles by IDs
     change-email: Add n number of bottles and return their IDs. This is a multipart request and each part has field name 'bottle' and contains the encoded bottle info to be added.
     send-verify-code: send verify code to email
+    activate: activate
 
 Additional help:
     %s user-method COMMAND --help
@@ -246,7 +257,7 @@ Show user info
     -token STRING: 
 
 Example:
-    `+os.Args[0]+` user-method show --view "tiny" --token "Esse dolores."
+    `+os.Args[0]+` user-method show --view "default" --token "Magnam quia omnis distinctio."
 `, os.Args[0])
 }
 
@@ -273,9 +284,9 @@ Add new bottle and return its ID.
 
 Example:
     `+os.Args[0]+` user-method change-info --body '{
-      "icon": "Quia itaque dolorum repellat in magnam quia.",
-      "name": "Ut voluptatem quia laudantium."
-   }' --token "Distinctio dolorem tempore neque dolorem voluptatem optio."
+      "icon": "Ipsam velit rem temporibus.",
+      "name": "Sed dolores."
+   }' --token "Qui reiciendis voluptates officia."
 `, os.Args[0])
 }
 
@@ -290,7 +301,7 @@ Example:
     `+os.Args[0]+` user-method change-password --body '{
       "newPassword": "new password",
       "oldPassword": "old password"
-   }' --token "Doloribus qui consequatur."
+   }' --token "Expedita amet non ratione est repellat."
 `, os.Args[0])
 }
 
@@ -303,8 +314,8 @@ Rate bottles by IDs
 Example:
     `+os.Args[0]+` user-method forgot-password --body '{
       "code": "1234",
-      "email": "Repellat cum quos dicta delectus.",
-      "newPassword": "Amet non ratione."
+      "email": "Iusto qui dolor.",
+      "newPassword": "Cumque est consectetur quia possimus."
    }'
 `, os.Args[0])
 }
@@ -318,8 +329,8 @@ Add n number of bottles and return their IDs. This is a multipart request and ea
 
 Example:
     `+os.Args[0]+` user-method change-email --body '{
-      "email": "Doloremque enim."
-   }' --token "Voluptate consequatur asperiores aliquid nemo sit architecto."
+      "email": "Architecto quo sequi veniam repellendus ab."
+   }' --token "Ab excepturi."
 `, os.Args[0])
 }
 
@@ -331,7 +342,18 @@ send verify code to email
 
 Example:
     `+os.Args[0]+` user-method send-verify-code --body '{
-      "email": "Nostrum ipsam dolores."
+      "email": "Illo recusandae est."
    }'
+`, os.Args[0])
+}
+
+func userMethodActivateUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] user-method activate -code STRING
+
+activate
+    -code STRING: 
+
+Example:
+    `+os.Args[0]+` user-method activate --code "Aut sit eligendi qui consequatur at."
 `, os.Args[0])
 }

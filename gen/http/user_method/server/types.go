@@ -90,7 +90,8 @@ type ShowResponseBody struct {
 	// Vintage of bottle
 	Email string `form:"email" json:"email" xml:"email"`
 	// Description of bottle
-	Icon string `form:"icon" json:"icon" xml:"icon"`
+	Icon     string `form:"icon" json:"icon" xml:"icon"`
+	Activate *bool  `form:"activate,omitempty" json:"activate,omitempty" xml:"activate,omitempty"`
 }
 
 // ShowResponseBodyChangeInfo is the type of the "userMethod" service "show"
@@ -121,7 +122,8 @@ type ChangeInfoResponseBody struct {
 	// Vintage of bottle
 	Email string `form:"email" json:"email" xml:"email"`
 	// Description of bottle
-	Icon string `form:"icon" json:"icon" xml:"icon"`
+	Icon     string `form:"icon" json:"icon" xml:"icon"`
+	Activate *bool  `form:"activate,omitempty" json:"activate,omitempty" xml:"activate,omitempty"`
 }
 
 // ChangeInfoResponseBodyChangeInfo is the type of the "userMethod" service
@@ -175,6 +177,16 @@ type SendVerifyCodeResponseBody struct {
 	Data    map[string]string `form:"data,omitempty" json:"data,omitempty" xml:"data,omitempty"`
 }
 
+// ActivateResponseBody is the type of the "userMethod" service "activate"
+// endpoint HTTP response body.
+type ActivateResponseBody struct {
+	// code
+	Code int `form:"code" json:"code" xml:"code"`
+	// message
+	Message *string           `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	Data    map[string]string `form:"data,omitempty" json:"data,omitempty" xml:"data,omitempty"`
+}
+
 // ShowNotFoundResponseBody is the type of the "userMethod" service "show"
 // endpoint HTTP response body for the "not_found" error.
 type ShowNotFoundResponseBody struct {
@@ -206,10 +218,11 @@ func NewRegisterResponseBody(res *usermethod.ResponseResult) *RegisterResponseBo
 // "show" endpoint of the "userMethod" service.
 func NewShowResponseBody(res *usermethodviews.UserInfoView) *ShowResponseBody {
 	body := &ShowResponseBody{
-		ID:    *res.ID,
-		Name:  *res.Name,
-		Email: *res.Email,
-		Icon:  *res.Icon,
+		ID:       *res.ID,
+		Name:     *res.Name,
+		Email:    *res.Email,
+		Icon:     *res.Icon,
+		Activate: res.Activate,
 	}
 	return body
 }
@@ -238,10 +251,11 @@ func NewLoginResponseBody(res *usermethod.Creds) *LoginResponseBody {
 // the "changeInfo" endpoint of the "userMethod" service.
 func NewChangeInfoResponseBody(res *usermethodviews.UserInfoView) *ChangeInfoResponseBody {
 	body := &ChangeInfoResponseBody{
-		ID:    *res.ID,
-		Name:  *res.Name,
-		Email: *res.Email,
-		Icon:  *res.Icon,
+		ID:       *res.ID,
+		Name:     *res.Name,
+		Email:    *res.Email,
+		Icon:     *res.Icon,
+		Activate: res.Activate,
 	}
 	return body
 }
@@ -315,6 +329,24 @@ func NewChangeEmailResponseBody(res *usermethod.ResponseResult) *ChangeEmailResp
 // of the "sendVerifyCode" endpoint of the "userMethod" service.
 func NewSendVerifyCodeResponseBody(res *usermethod.ResponseResult) *SendVerifyCodeResponseBody {
 	body := &SendVerifyCodeResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	if res.Data != nil {
+		body.Data = make(map[string]string, len(res.Data))
+		for key, val := range res.Data {
+			tk := key
+			tv := val
+			body.Data[tk] = tv
+		}
+	}
+	return body
+}
+
+// NewActivateResponseBody builds the HTTP response body from the result of the
+// "activate" endpoint of the "userMethod" service.
+func NewActivateResponseBody(res *usermethod.ResponseResult) *ActivateResponseBody {
+	body := &ActivateResponseBody{
 		Code:    res.Code,
 		Message: res.Message,
 	}
@@ -414,6 +446,13 @@ func NewSendVerifyCodePayload(body *SendVerifyCodeRequestBody) *usermethod.SendV
 		Email: *body.Email,
 	}
 	return v
+}
+
+// NewActivatePayload builds a userMethod service activate endpoint payload.
+func NewActivatePayload(code string) *usermethod.ActivatePayload {
+	return &usermethod.ActivatePayload{
+		Code: code,
+	}
 }
 
 // ValidateRegisterRequestBody runs the validations defined on

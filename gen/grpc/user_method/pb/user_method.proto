@@ -31,6 +31,8 @@ service UserMethod {
 	rpc ChangeEmail (ChangeEmailRequest) returns (ChangeEmailResponse);
 	// send verify code to email
 	rpc SendVerifyCode (SendVerifyCodeRequest) returns (SendVerifyCodeResponse);
+	// activate
+	rpc Activate (ActivateRequest) returns (ActivateResponse);
 }
 
 message RegisterRequest {
@@ -68,6 +70,7 @@ message ShowResponse {
 	// Description of bottle
 	string icon = 3;
 	string password = 5;
+	bool activate = 6;
 }
 
 message LoginRequest {
@@ -99,6 +102,7 @@ message ChangeInfoResponse {
 	// Description of bottle
 	string icon = 3;
 	string password = 5;
+	bool activate = 6;
 }
 
 message ChangePasswordRequest {
@@ -147,6 +151,18 @@ message SendVerifyCodeRequest {
 }
 
 message SendVerifyCodeResponse {
+	// code
+	sint32 code = 1;
+	// message
+	string message_ = 2;
+	map<string, string> data = 3;
+}
+
+message ActivateRequest {
+	string code = 1;
+}
+
+message ActivateResponse {
 	// code
 	sint32 code = 1;
 	// message

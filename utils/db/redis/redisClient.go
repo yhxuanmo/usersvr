@@ -3,16 +3,18 @@ package redis
 import (
 	"github.com/go-redis/redis"
 	"log"
+	"usersvr/utils"
 )
 
 var RedisClient *redis.Client
 
 func init(){
 	//var err error
+	redisConf := utils.Config.Redis
 	RedisClient = redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-		Password:"",
-		DB: 0,
+		Addr: redisConf.Addr,
+		Password: redisConf.Password,
+		DB: redisConf.Db,
 	})
 	_, err := RedisClient.Ping().Result()
 	if err != nil {

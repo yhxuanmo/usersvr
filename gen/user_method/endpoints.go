@@ -24,6 +24,7 @@ type Endpoints struct {
 	ForgotPassword goa.Endpoint
 	ChangeEmail    goa.Endpoint
 	SendVerifyCode goa.Endpoint
+	Activate       goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "userMethod" service with endpoints.
@@ -39,6 +40,7 @@ func NewEndpoints(s Service) *Endpoints {
 		ForgotPassword: NewForgotPasswordEndpoint(s),
 		ChangeEmail:    NewChangeEmailEndpoint(s, a.JWTAuth),
 		SendVerifyCode: NewSendVerifyCodeEndpoint(s),
+		Activate:       NewActivateEndpoint(s),
 	}
 }
 
@@ -52,6 +54,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.ForgotPassword = m(e.ForgotPassword)
 	e.ChangeEmail = m(e.ChangeEmail)
 	e.SendVerifyCode = m(e.SendVerifyCode)
+	e.Activate = m(e.Activate)
 }
 
 // NewRegisterEndpoint returns an endpoint function that calls the method
@@ -173,5 +176,14 @@ func NewSendVerifyCodeEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*SendVerifyCodePayload)
 		return s.SendVerifyCode(ctx, p)
+	}
+}
+
+// NewActivateEndpoint returns an endpoint function that calls the method
+// "activate" of service "userMethod".
+func NewActivateEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*ActivatePayload)
+		return s.Activate(ctx, p)
 	}
 }

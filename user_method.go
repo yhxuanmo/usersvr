@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ErrPassword error = usermethod.PasswordError("password is error!!!")
+	ErrPassword error = usermethod.PasswordError("password is error")
 )
 
 // userMethod service example implementation.
@@ -34,7 +34,23 @@ func (s *userMethodsrvc) Register(ctx context.Context, p *usermethod.RegisterPay
 	if err != nil {
 		return &usermethod.ResponseResult{Code:http.StatusBadRequest}, err
 	}
-	resStr := fmt.Sprintf("succcess create %s", user.Email)
+
+	codeStr := utils.GenActivateCode(18)
+	redisKye := fmt.Sprintf("activate_%s", codeStr)
+	activateUrl := fmt.Sprintf("%s/user/activate/%s", utils.Config.Server.Http,codeStr)
+	err = redis.RedisClient.Set(redisKye, user.Email, time.Minute*5).Err()
+	var extraMsg string
+	if err != nil {
+		extraMsg = ",but fail to send activate email,please send email by yourself"
+	}
+	sendTo := []string{user.Email}
+	subject := "activate your account"
+	body := fmt.Sprintf("<html><body><h3><a href=%s>点击激活</a></h3></body></html>", activateUrl)
+	err = email.SendToMail(sendTo, subject, body)
+	if err != nil {
+		extraMsg = ",but fail to send activate email,please send email by yourself"
+	}
+	resStr := fmt.Sprintf("succcess create %s %s", user.Email, extraMsg)
 	return &usermethod.ResponseResult{Code:http.StatusOK, Message: &resStr}, nil
 }
 
@@ -49,6 +65,7 @@ func (s *userMethodsrvc) Show(ctx context.Context, p *usermethod.ShowPayload) (r
 		Name:user.Name,
 		Email:user.Email,
 		Icon:user.Icon,
+		Activate: &user.Activate,
 	}
 	return res, "default", nil
 }
@@ -84,6 +101,9 @@ func (s *userMethodsrvc) ChangeInfo(ctx context.Context, p *usermethod.ChangeInf
 	if err != nil {
 		return &usermethod.UserInfo{}, "default", ErrInvalidToken
 	}
+	if user.Activate == false {
+
+	}
 	updataInfo := map[string]interface{}{
 		"name": p.Name,
 		"icon":p.Icon,
@@ -97,6 +117,7 @@ func (s *userMethodsrvc) ChangeInfo(ctx context.Context, p *usermethod.ChangeInf
 		Name:resUser.Name,
 		Email:resUser.Email,
 		Icon:resUser.Icon,
+		Activate: &resUser.Activate,
 	}
 	return res, "changeInfo", nil
 }
@@ -171,8 +192,24 @@ func (s *userMethodsrvc) ForgotPassword(ctx context.Context, p *usermethod.Forgo
 // and each part has field name 'bottle' and contains the encoded bottle info
 // to be added.
 func (s *userMethodsrvc) ChangeEmail(ctx context.Context, p *usermethod.ChangeEmailPayload) (res *usermethod.ResponseResult, err error) {
-	s.logger.Print("userMethod.changeEmail")
-	return
+	user, err := TokenToUser(p.Token)
+	if err != nil {
+		return &usermethod.ResponseResult{}, ErrInvalidToken
+	}
+	updataInfo := map[string]interface{}{
+		"password": p.Email,
+		"activate": false,
+	}
+	_, err = pg.UpdateUser(user, updataInfo)
+	if err != nil {
+		return &usermethod.ResponseResult{}, err
+	}
+	resMsg := "success to change email,please send email to activate your account"
+	res = &usermethod.ResponseResult{
+		Code:http.StatusOK,
+		Message: &resMsg,
+	}
+	return res,nil
 }
 
 func (s *userMethodsrvc) SendVerifyCode(ctx context.Context, p *usermethod.SendVerifyCodePayload) (res *usermethod.ResponseResult, err error) {
@@ -215,4 +252,40 @@ func (s *userMethodsrvc) SendVerifyCode(ctx context.Context, p *usermethod.SendV
 		Message: &msg,
 	}
 	return res, nil
+}
+
+func (s *userMethodsrvc) Activate(ctx context.Context, p *usermethod.ActivatePayload) (res *usermethod.ResponseResult, err error) {
+	code := p.Code
+	redisKey := fmt.Sprintf("activate_%s", code)
+	userEmail, err := redis.RedisClient.Get(redisKey).Result()
+	if err != nil {
+		msg := "verify code is error"
+		res := &usermethod.ResponseResult{
+			Code:http.StatusBadRequest,
+			Message: &msg,
+		}
+		return res, nil
+	}
+	user, err := pg.FindOneUser(userEmail)
+	if err != nil {
+		msg := "verify code is error"
+		res := &usermethod.ResponseResult{
+			Code:http.StatusBadRequest,
+			Message: &msg,
+		}
+		return res, nil
+	}
+	updateInfo := map[string]interface{}{
+		"activate":true,
+	}
+	_, err = pg.UpdateUser(user, updateInfo)
+	if err != nil {
+		return &usermethod.ResponseResult{}, err
+	}
+	resMsg := "success to activate"
+	res = &usermethod.ResponseResult{
+		Code:http.StatusOK,
+		Message: &resMsg,
+	}
+	return res,nil
 }

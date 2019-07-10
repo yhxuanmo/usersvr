@@ -164,3 +164,19 @@ func (c *Client) SendVerifyCode() goa.Endpoint {
 		return res, nil
 	}
 }
+
+// Activate calls the "Activate" function in user_methodpb.UserMethodClient
+// interface.
+func (c *Client) Activate() goa.Endpoint {
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		inv := goagrpc.NewInvoker(
+			BuildActivateFunc(c.grpccli, c.opts...),
+			EncodeActivateRequest,
+			DecodeActivateResponse)
+		res, err := inv.Invoke(ctx, v)
+		if err != nil {
+			return nil, goa.Fault(err.Error())
+		}
+		return res, nil
+	}
+}

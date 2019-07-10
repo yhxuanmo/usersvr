@@ -40,6 +40,8 @@ type Service interface {
 	ChangeEmail(context.Context, *ChangeEmailPayload) (res *ResponseResult, err error)
 	// send verify code to email
 	SendVerifyCode(context.Context, *SendVerifyCodePayload) (res *ResponseResult, err error)
+	// activate
+	Activate(context.Context, *ActivatePayload) (res *ResponseResult, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -56,7 +58,7 @@ const ServiceName = "userMethod"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [8]string{"register", "show", "login", "changeInfo", "changePassword", "forgotPassword", "changeEmail", "sendVerifyCode"}
+var MethodNames = [9]string{"register", "show", "login", "changeInfo", "changePassword", "forgotPassword", "changeEmail", "sendVerifyCode", "activate"}
 
 // RegisterPayload is the payload type of the userMethod service register
 // method.
@@ -95,6 +97,7 @@ type UserInfo struct {
 	// Description of bottle
 	Icon     string
 	Password *string
+	Activate *bool
 }
 
 // Credentials used to authenticate to retrieve JWT token
@@ -153,6 +156,12 @@ type ChangeEmailPayload struct {
 // sendVerifyCode method.
 type SendVerifyCodePayload struct {
 	Email string
+}
+
+// ActivatePayload is the payload type of the userMethod service activate
+// method.
+type ActivatePayload struct {
+	Code string
 }
 
 // Credentials are invalid
@@ -249,7 +258,9 @@ func NewViewedUserInfo(res *UserInfo, view string) *usermethodviews.UserInfo {
 
 // newUserInfo converts projected type UserInfo to service type UserInfo.
 func newUserInfo(vres *usermethodviews.UserInfoView) *UserInfo {
-	res := &UserInfo{}
+	res := &UserInfo{
+		Activate: vres.Activate,
+	}
 	if vres.ID != nil {
 		res.ID = *vres.ID
 	}
@@ -285,10 +296,11 @@ func newUserInfoChangeInfo(vres *usermethodviews.UserInfoView) *UserInfo {
 // using the "default" view.
 func newUserInfoView(res *UserInfo) *usermethodviews.UserInfoView {
 	vres := &usermethodviews.UserInfoView{
-		ID:    &res.ID,
-		Name:  &res.Name,
-		Email: &res.Email,
-		Icon:  &res.Icon,
+		ID:       &res.ID,
+		Name:     &res.Name,
+		Email:    &res.Email,
+		Icon:     &res.Icon,
+		Activate: res.Activate,
 	}
 	return vres
 }

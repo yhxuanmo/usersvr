@@ -15,3 +15,15 @@ func GenVerifyCode() string {
 	}
 	return string(res)
 }
+
+
+func GenActivateCode(lenth int) string {
+	str := "0123456789qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM"
+	var  res []byte
+	byteStr := []byte(str)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < lenth; i++ {
+		res = append(res, byteStr[r.Intn(len(byteStr))])
+	}
+	return string(res)
+}

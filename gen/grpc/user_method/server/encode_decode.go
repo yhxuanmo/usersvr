@@ -338,3 +338,33 @@ func DecodeSendVerifyCodeRequest(ctx context.Context, v interface{}, md metadata
 	}
 	return payload, nil
 }
+
+// EncodeActivateResponse encodes responses from the "userMethod" service
+// "activate" endpoint.
+func EncodeActivateResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
+	result, ok := v.(*usermethod.ResponseResult)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("userMethod", "activate", "*usermethod.ResponseResult", v)
+	}
+	resp := NewActivateResponse(result)
+	return resp, nil
+}
+
+// DecodeActivateRequest decodes requests sent to "userMethod" service
+// "activate" endpoint.
+func DecodeActivateRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+	var (
+		message *user_methodpb.ActivateRequest
+		ok      bool
+	)
+	{
+		if message, ok = v.(*user_methodpb.ActivateRequest); !ok {
+			return nil, goagrpc.ErrInvalidType("userMethod", "activate", "*user_methodpb.ActivateRequest", v)
+		}
+	}
+	var payload *usermethod.ActivatePayload
+	{
+		payload = NewActivatePayload(message)
+	}
+	return payload, nil
+}

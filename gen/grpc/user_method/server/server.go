@@ -27,6 +27,7 @@ type Server struct {
 	ForgotPasswordH goagrpc.UnaryHandler
 	ChangeEmailH    goagrpc.UnaryHandler
 	SendVerifyCodeH goagrpc.UnaryHandler
+	ActivateH       goagrpc.UnaryHandler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -46,6 +47,7 @@ func New(e *usermethod.Endpoints, uh goagrpc.UnaryHandler) *Server {
 		ForgotPasswordH: NewForgotPasswordHandler(e.ForgotPassword, uh),
 		ChangeEmailH:    NewChangeEmailHandler(e.ChangeEmail, uh),
 		SendVerifyCodeH: NewSendVerifyCodeHandler(e.SendVerifyCode, uh),
+		ActivateH:       NewActivateHandler(e.Activate, uh),
 	}
 }
 
@@ -222,4 +224,25 @@ func (s *Server) SendVerifyCode(ctx context.Context, message *user_methodpb.Send
 		return nil, goagrpc.EncodeError(err)
 	}
 	return resp.(*user_methodpb.SendVerifyCodeResponse), nil
+}
+
+// NewActivateHandler creates a gRPC handler which serves the "userMethod"
+// service "activate" endpoint.
+func NewActivateHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
+	if h == nil {
+		h = goagrpc.NewUnaryHandler(endpoint, DecodeActivateRequest, EncodeActivateResponse)
+	}
+	return h
+}
+
+// Activate implements the "Activate" method in user_methodpb.UserMethodServer
+// interface.
+func (s *Server) Activate(ctx context.Context, message *user_methodpb.ActivateRequest) (*user_methodpb.ActivateResponse, error) {
+	ctx = context.WithValue(ctx, goa.MethodKey, "activate")
+	ctx = context.WithValue(ctx, goa.ServiceKey, "userMethod")
+	resp, err := s.ActivateH.Handle(ctx, message)
+	if err != nil {
+		return nil, goagrpc.EncodeError(err)
+	}
+	return resp.(*user_methodpb.ActivateResponse), nil
 }

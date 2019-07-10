@@ -612,3 +612,68 @@ func DecodeSendVerifyCodeResponse(decoder func(*http.Response) goahttp.Decoder, 
 		}
 	}
 }
+
+// BuildActivateRequest instantiates a HTTP request object with method and path
+// set to call the "userMethod" service "activate" endpoint
+func (c *Client) BuildActivateRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	var (
+		code string
+	)
+	{
+		p, ok := v.(*usermethod.ActivatePayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("userMethod", "activate", "*usermethod.ActivatePayload", v)
+		}
+		code = p.Code
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: ActivateUserMethodPath(code)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("userMethod", "activate", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// DecodeActivateResponse returns a decoder for responses returned by the
+// userMethod activate endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+func DecodeActivateResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body ActivateResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userMethod", "activate", err)
+			}
+			err = ValidateActivateResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userMethod", "activate", err)
+			}
+			res := NewActivateResponseResultOK(&body)
+			return res, nil
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("userMethod", "activate", resp.StatusCode, string(body))
+		}
+	}
+}

@@ -236,6 +236,22 @@ var _ = Service("userMethod", func() {
 			Response(CodeOK)
 		})
 	})
+
+	Method("activate", func() {
+		Description("activate")
+		Payload(func() {
+			Field(1, "code", String)
+			Required("code")
+		})
+		Result(ResponseResult)
+		HTTP(func() {
+			GET("/activate/{code}")
+			Response(StatusOK)
+		})
+		GRPC(func() {
+			Response(CodeOK)
+		})
+	})
 })
 
 var Creds = Type("Creds", func() {

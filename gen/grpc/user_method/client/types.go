@@ -57,9 +57,10 @@ func NewShowRequest() *user_methodpb.ShowRequest {
 // "userMethod" service from the gRPC response type.
 func NewShowResult(message *user_methodpb.ShowResponse) *usermethodviews.UserInfoView {
 	result := &usermethodviews.UserInfoView{
-		Name:  &message.Name,
-		Email: &message.Email,
-		Icon:  &message.Icon,
+		Name:     &message.Name,
+		Email:    &message.Email,
+		Icon:     &message.Icon,
+		Activate: &message.Activate,
 	}
 	idptr := int(message.Id)
 	result.ID = &idptr
@@ -112,9 +113,10 @@ func NewChangeInfoRequest(payload *usermethod.ChangeInfoPayload) *user_methodpb.
 // the "userMethod" service from the gRPC response type.
 func NewChangeInfoResult(message *user_methodpb.ChangeInfoResponse) *usermethodviews.UserInfoView {
 	result := &usermethodviews.UserInfoView{
-		Name:  &message.Name,
-		Email: &message.Email,
-		Icon:  &message.Icon,
+		Name:     &message.Name,
+		Email:    &message.Email,
+		Icon:     &message.Icon,
+		Activate: &message.Activate,
 	}
 	idptr := int(message.Id)
 	result.ID = &idptr
@@ -226,6 +228,35 @@ func NewSendVerifyCodeRequest(payload *usermethod.SendVerifyCodePayload) *user_m
 // NewSendVerifyCodeResult builds the result type of the "sendVerifyCode"
 // endpoint of the "userMethod" service from the gRPC response type.
 func NewSendVerifyCodeResult(message *user_methodpb.SendVerifyCodeResponse) *usermethod.ResponseResult {
+	result := &usermethod.ResponseResult{
+		Code: int(message.Code),
+	}
+	if message.Message_ != "" {
+		result.Message = &message.Message_
+	}
+	if message.Data != nil {
+		result.Data = make(map[string]string, len(message.Data))
+		for key, val := range message.Data {
+			tk := key
+			tv := val
+			result.Data[tk] = tv
+		}
+	}
+	return result
+}
+
+// NewActivateRequest builds the gRPC request type from the payload of the
+// "activate" endpoint of the "userMethod" service.
+func NewActivateRequest(payload *usermethod.ActivatePayload) *user_methodpb.ActivateRequest {
+	message := &user_methodpb.ActivateRequest{
+		Code: payload.Code,
+	}
+	return message
+}
+
+// NewActivateResult builds the result type of the "activate" endpoint of the
+// "userMethod" service from the gRPC response type.
+func NewActivateResult(message *user_methodpb.ActivateResponse) *usermethod.ResponseResult {
 	result := &usermethod.ResponseResult{
 		Code: int(message.Code),
 	}

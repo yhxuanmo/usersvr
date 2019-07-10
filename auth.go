@@ -6,6 +6,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"time"
 	usermethod "usersvr/gen/user_method"
+	"usersvr/utils"
 	"usersvr/utils/db/model"
 	"usersvr/utils/db/pg"
 
@@ -25,7 +26,7 @@ var (
 	//ErrInvalidTokenScopes error = usermethod.InvalidScopes("invalid scopes in token")
 
 	// Key is the key used in JWT authentication
-	Key = []byte("secret")
+	Key = []byte(utils.Config.Jwt.Secret)
 )
 
 // JWTAuth implements the authorization logic for service "userMethod" for the

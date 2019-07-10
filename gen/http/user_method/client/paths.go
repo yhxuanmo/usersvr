@@ -7,6 +7,10 @@
 
 package client
 
+import (
+	"fmt"
+)
+
 // RegisterUserMethodPath returns the URL path to the userMethod service register HTTP endpoint.
 func RegisterUserMethodPath() string {
 	return "/user/register"
@@ -45,4 +49,9 @@ func ChangeEmailUserMethodPath() string {
 // SendVerifyCodeUserMethodPath returns the URL path to the userMethod service sendVerifyCode HTTP endpoint.
 func SendVerifyCodeUserMethodPath() string {
 	return "/user/send/code"
+}
+
+// ActivateUserMethodPath returns the URL path to the userMethod service activate HTTP endpoint.
+func ActivateUserMethodPath(code string) string {
+	return fmt.Sprintf("/user/activate/%v", code)
 }

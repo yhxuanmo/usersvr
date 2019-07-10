@@ -77,7 +77,7 @@ func BuildChangeInfoPayload(userMethodChangeInfoBody string, userMethodChangeInf
 	{
 		err = json.Unmarshal([]byte(userMethodChangeInfoBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"icon\": \"Quia itaque dolorum repellat in magnam quia.\",\n      \"name\": \"Ut voluptatem quia laudantium.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"icon\": \"Ipsam velit rem temporibus.\",\n      \"name\": \"Sed dolores.\"\n   }'")
 		}
 	}
 	var token string
@@ -123,7 +123,7 @@ func BuildForgotPasswordPayload(userMethodForgotPasswordBody string) (*usermetho
 	{
 		err = json.Unmarshal([]byte(userMethodForgotPasswordBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"code\": \"1234\",\n      \"email\": \"Repellat cum quos dicta delectus.\",\n      \"newPassword\": \"Amet non ratione.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"code\": \"1234\",\n      \"email\": \"Iusto qui dolor.\",\n      \"newPassword\": \"Cumque est consectetur quia possimus.\"\n   }'")
 		}
 	}
 	v := &usermethod.ForgotPasswordPayload{
@@ -142,7 +142,7 @@ func BuildChangeEmailPayload(userMethodChangeEmailBody string, userMethodChangeE
 	{
 		err = json.Unmarshal([]byte(userMethodChangeEmailBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"email\": \"Doloremque enim.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"email\": \"Architecto quo sequi veniam repellendus ab.\"\n   }'")
 		}
 	}
 	var token string
@@ -164,11 +164,24 @@ func BuildSendVerifyCodePayload(userMethodSendVerifyCodeBody string) (*usermetho
 	{
 		err = json.Unmarshal([]byte(userMethodSendVerifyCodeBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"email\": \"Nostrum ipsam dolores.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, example of valid JSON:\n%s", "'{\n      \"email\": \"Illo recusandae est.\"\n   }'")
 		}
 	}
 	v := &usermethod.SendVerifyCodePayload{
 		Email: body.Email,
 	}
 	return v, nil
+}
+
+// BuildActivatePayload builds the payload for the userMethod activate endpoint
+// from CLI flags.
+func BuildActivatePayload(userMethodActivateCode string) (*usermethod.ActivatePayload, error) {
+	var code string
+	{
+		code = userMethodActivateCode
+	}
+	payload := &usermethod.ActivatePayload{
+		Code: code,
+	}
+	return payload, nil
 }

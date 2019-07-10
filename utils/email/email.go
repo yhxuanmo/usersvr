@@ -3,15 +3,16 @@ package email
 import (
 	"gopkg.in/gomail.v2"
 	"strconv"
+	"usersvr/utils"
 )
 
 func SendToMail(mailTo []string, subject, body string) error {
 	// 定义邮箱服务器连接信息
 	mailConn := map[string]string {
-		"user": "han.yang@yottacloud.cn",
-		"pass": "29VGYav7uXQQgkpa",
-		"host": "smtp.exmail.qq.com",
-		"port": "465",
+		"user": utils.Config.Email.User,
+		"pass": utils.Config.Email.Pass,
+		"host": utils.Config.Email.Host,
+		"port": utils.Config.Email.Port,
 	}
 	port, _ := strconv.Atoi(mailConn["port"])
 	m := gomail.NewMessage()

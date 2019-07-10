@@ -22,7 +22,7 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `user-method (register|show|login|change-info|change-password|forgot-password|change-email|send-verify-code)
+	return `user-method (register|show|login|change-info|change-password|forgot-password|change-email|send-verify-code|activate)
 `
 }
 
@@ -68,6 +68,9 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 
 		userMethodSendVerifyCodeFlags       = flag.NewFlagSet("send-verify-code", flag.ExitOnError)
 		userMethodSendVerifyCodeMessageFlag = userMethodSendVerifyCodeFlags.String("message", "", "")
+
+		userMethodActivateFlags       = flag.NewFlagSet("activate", flag.ExitOnError)
+		userMethodActivateMessageFlag = userMethodActivateFlags.String("message", "", "")
 	)
 	userMethodFlags.Usage = userMethodUsage
 	userMethodRegisterFlags.Usage = userMethodRegisterUsage
@@ -78,6 +81,7 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 	userMethodForgotPasswordFlags.Usage = userMethodForgotPasswordUsage
 	userMethodChangeEmailFlags.Usage = userMethodChangeEmailUsage
 	userMethodSendVerifyCodeFlags.Usage = userMethodSendVerifyCodeUsage
+	userMethodActivateFlags.Usage = userMethodActivateUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -137,6 +141,9 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			case "send-verify-code":
 				epf = userMethodSendVerifyCodeFlags
 
+			case "activate":
+				epf = userMethodActivateFlags
+
 			}
 
 		}
@@ -186,6 +193,9 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			case "send-verify-code":
 				endpoint = c.SendVerifyCode()
 				data, err = usermethodc.BuildSendVerifyCodePayload(*userMethodSendVerifyCodeMessageFlag)
+			case "activate":
+				endpoint = c.Activate()
+				data, err = usermethodc.BuildActivatePayload(*userMethodActivateMessageFlag)
 			}
 		}
 	}
@@ -212,6 +222,7 @@ COMMAND:
     forgot-password: Rate bottles by IDs
     change-email: Add n number of bottles and return their IDs. This is a multipart request and each part has field name 'bottle' and contains the encoded bottle info to be added.
     send-verify-code: send verify code to email
+    activate: activate
 
 Additional help:
     %s user-method COMMAND --help
@@ -239,7 +250,7 @@ Show user info
     -token STRING: 
 
 Example:
-    `+os.Args[0]+` user-method show --view "tiny" --token "Autem accusamus et dolorem voluptatem."
+    `+os.Args[0]+` user-method show --view "tiny" --token "Autem ut et id deleniti."
 `, os.Args[0])
 }
 
@@ -266,9 +277,9 @@ Add new bottle and return its ID.
 
 Example:
     `+os.Args[0]+` user-method change-info --message '{
-      "icon": "Qui et nostrum.",
-      "name": "Dolorem et quasi quas ab."
-   }' --token "Ratione officia labore amet."
+      "icon": "Sequi et sint quos culpa doloribus voluptatem.",
+      "name": "Alias architecto voluptatem minus neque id."
+   }' --token "Ullam porro repellendus rerum eligendi laboriosam accusamus."
 `, os.Args[0])
 }
 
@@ -283,7 +294,7 @@ Example:
     `+os.Args[0]+` user-method change-password --message '{
       "newPassword": "new password",
       "oldPassword": "old password"
-   }' --token "Blanditiis quasi voluptate rerum et."
+   }' --token "Voluptatem dolor eos."
 `, os.Args[0])
 }
 
@@ -296,8 +307,8 @@ Rate bottles by IDs
 Example:
     `+os.Args[0]+` user-method forgot-password --message '{
       "code": "1234",
-      "email": "Id deleniti.",
-      "newPassword": "Corporis autem ut."
+      "email": "Ut facilis.",
+      "newPassword": "Sed quia placeat quod iste."
    }'
 `, os.Args[0])
 }
@@ -311,8 +322,8 @@ Add n number of bottles and return their IDs. This is a multipart request and ea
 
 Example:
     `+os.Args[0]+` user-method change-email --message '{
-      "email": "Accusamus rerum."
-   }' --token "Illum ullam porro repellendus rerum eligendi."
+      "email": "Repellendus perspiciatis quia perspiciatis quo iste commodi."
+   }' --token "Placeat cum et esse aut."
 `, os.Args[0])
 }
 
@@ -324,7 +335,20 @@ send verify code to email
 
 Example:
     `+os.Args[0]+` user-method send-verify-code --message '{
-      "email": "Sint quos."
+      "email": "Enim corporis."
+   }'
+`, os.Args[0])
+}
+
+func userMethodActivateUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] user-method activate -message JSON
+
+activate
+    -message JSON: 
+
+Example:
+    `+os.Args[0]+` user-method activate --message '{
+      "code": "Et voluptatibus voluptas incidunt nihil."
    }'
 `, os.Args[0])
 }

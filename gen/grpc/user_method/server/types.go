@@ -71,6 +71,9 @@ func NewShowResponse(result *usermethodviews.UserInfoView) *user_methodpb.ShowRe
 	if result.Password != nil {
 		message.Password = *result.Password
 	}
+	if result.Activate != nil {
+		message.Activate = *result.Activate
+	}
 	return message
 }
 
@@ -132,6 +135,9 @@ func NewChangeInfoResponse(result *usermethodviews.UserInfoView) *user_methodpb.
 	}
 	if result.Password != nil {
 		message.Password = *result.Password
+	}
+	if result.Activate != nil {
+		message.Activate = *result.Activate
 	}
 	return message
 }
@@ -241,6 +247,35 @@ func NewSendVerifyCodePayload(message *user_methodpb.SendVerifyCodeRequest) *use
 // the "sendVerifyCode" endpoint of the "userMethod" service.
 func NewSendVerifyCodeResponse(result *usermethod.ResponseResult) *user_methodpb.SendVerifyCodeResponse {
 	message := &user_methodpb.SendVerifyCodeResponse{
+		Code: int32(result.Code),
+	}
+	if result.Message != nil {
+		message.Message_ = *result.Message
+	}
+	if result.Data != nil {
+		message.Data = make(map[string]string, len(result.Data))
+		for key, val := range result.Data {
+			tk := key
+			tv := val
+			message.Data[tk] = tv
+		}
+	}
+	return message
+}
+
+// NewActivatePayload builds the payload of the "activate" endpoint of the
+// "userMethod" service from the gRPC request type.
+func NewActivatePayload(message *user_methodpb.ActivateRequest) *usermethod.ActivatePayload {
+	v := &usermethod.ActivatePayload{
+		Code: message.Code,
+	}
+	return v
+}
+
+// NewActivateResponse builds the gRPC response type from the result of the
+// "activate" endpoint of the "userMethod" service.
+func NewActivateResponse(result *usermethod.ResponseResult) *user_methodpb.ActivateResponse {
+	message := &user_methodpb.ActivateResponse{
 		Code: int32(result.Code),
 	}
 	if result.Message != nil {

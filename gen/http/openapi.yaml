@@ -50,6 +50,27 @@ paths:
       - http
       security:
       - jwt_header_Authorization: []
+  /user/activate/{code}:
+    get:
+      tags:
+      - userMethod
+      summary: activate userMethod
+      description: activate
+      operationId: userMethod#activate
+      parameters:
+      - name: code
+        in: path
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/UserMethodActivateResponseBody'
+            required:
+            - code
+      schemes:
+      - http
   /user/change/email:
     post:
       tags:
@@ -246,15 +267,43 @@ paths:
       schemes:
       - http
 definitions:
+  UserMethodActivateResponseBody:
+    title: UserMethodActivateResponseBody
+    type: object
+    properties:
+      code:
+        type: integer
+        description: code
+        example: 200
+        format: int64
+      data:
+        type: object
+        example:
+          Commodi impedit et dolorem velit explicabo.: Sequi quo facere et sit expedita.
+          Maiores rem voluptatem temporibus.: Est minima deserunt earum quam ex.
+          Sapiente quas unde quia vitae.: Est quibusdam.
+        additionalProperties: true
+      message:
+        type: string
+        description: message
+        example: bad request
+    example:
+      code: 200
+      data:
+        Omnis veritatis fuga eum.: Et et.
+        Sequi harum maxime inventore harum et esse.: Est ea.
+      message: bad request
+    required:
+    - code
   UserMethodChangeEmailRequestBody:
     title: UserMethodChangeEmailRequestBody
     type: object
     properties:
       email:
         type: string
-        example: Quasi modi reiciendis quia velit quia.
+        example: Dolor et sit expedita repudiandae veniam.
     example:
-      email: Autem aperiam alias repellat et.
+      email: Nisi consequuntur sint.
     required:
     - email
   UserMethodChangeEmailResponseBody:
@@ -269,10 +318,9 @@ definitions:
       data:
         type: object
         example:
-          Ab illo voluptatum.: Et laboriosam adipisci dolore et est optio.
-          Enim in temporibus consequatur qui sit.: Debitis aut ullam qui ducimus sint
-            aut.
-          Et excepturi.: Natus optio impedit nobis.
+          Architecto est reiciendis consequatur ut eos qui.: Voluptate nesciunt et.
+          Asperiores quis est modi.: Quae magni.
+          Magnam consequatur corporis alias ex.: Tempora labore dolores ad.
         additionalProperties: true
       message:
         type: string
@@ -281,7 +329,8 @@ definitions:
     example:
       code: 200
       data:
-        Rerum aperiam iste.: Facilis perspiciatis.
+        Doloremque omnis corrupti aliquid.: Autem sed eum.
+        Neque sint voluptas error incidunt aut repellendus.: Quisquam ratione sed.
       message: bad request
     required:
     - code
@@ -292,14 +341,14 @@ definitions:
       icon:
         type: string
         description: icon of user
-        example: Voluptas sit placeat cum.
+        example: Alias repellat et ipsam.
       name:
         type: string
         description: name of user
-        example: Aspernatur vero minus totam veritatis voluptas.
+        example: Reiciendis quia velit quia est autem.
     example:
-      icon: Perspiciatis quia.
-      name: Esse aut aut.
+      icon: Dolorem error qui.
+      name: Eius ad officia corrupti soluta qui voluptas.
     required:
     - name
     - icon
@@ -307,10 +356,13 @@ definitions:
     title: 'Mediatype identifier: application/vnd.cellar.stored-bottle; view=default'
     type: object
     properties:
+      activate:
+        type: boolean
+        example: false
       email:
         type: string
         description: Vintage of bottle
-        example: sv7
+        example: zcj
         maxLength: 100
       icon:
         type: string
@@ -330,7 +382,8 @@ definitions:
         maxLength: 100
     description: ChangeInfoResponseBody result type (default view)
     example:
-      email: "727"
+      activate: true
+      email: 6al
       icon: Red wine blend with an emphasis on the Cabernet Franc grape and including
         other Bordeaux grape varietals and some Syrah
       id: 1
@@ -370,8 +423,8 @@ definitions:
       data:
         type: object
         example:
-          Iste commodi qui enim dolorum velit.: Praesentium consectetur.
-          Ut laboriosam.: Ut minima eos et officiis et.
+          Delectus vitae qui optio aut.: Accusantium consequuntur qui enim omnis ducimus
+            sit.
         additionalProperties: true
       message:
         type: string
@@ -380,8 +433,9 @@ definitions:
     example:
       code: 200
       data:
-        Corporis optio tempore.: Ut voluptatum mollitia.
-        Eius ut dolor id fugit qui quaerat.: Et voluptatibus voluptas incidunt nihil.
+        A dolorum saepe eum hic.: Iste earum.
+        Laudantium dolorem ipsum ea assumenda repellat quasi.: Accusamus quisquam
+          qui dolore aut consequatur.
       message: bad request
     required:
     - code
@@ -394,14 +448,14 @@ definitions:
         example: "1234"
       email:
         type: string
-        example: Aspernatur cupiditate qui sed ut magni.
+        example: Eos debitis itaque eveniet qui.
       newPassword:
         type: string
-        example: Esse qui repudiandae ullam.
+        example: Pariatur aspernatur quo beatae omnis et.
     example:
       code: "1234"
-      email: Distinctio numquam.
-      newPassword: Ipsam recusandae.
+      email: Eos dignissimos dolorem nihil aut velit.
+      newPassword: Sunt est dolorem nostrum quisquam labore.
     required:
     - code
     - newPassword
@@ -418,7 +472,9 @@ definitions:
       data:
         type: object
         example:
-          Ut quod.: Ad eum et aut qui qui qui.
+          Et eligendi.: Et minus odio voluptas eaque sed.
+          Sapiente unde aspernatur voluptas laboriosam alias.: Et aut doloribus dolorum
+            repellendus sit earum.
         additionalProperties: true
       message:
         type: string
@@ -427,7 +483,8 @@ definitions:
     example:
       code: 200
       data:
-        Beatae dignissimos libero vel.: Rerum molestiae quo.
+        Et odit id quae ipsam.: Non aut perspiciatis.
+        Quam assumenda ex vitae ut.: Veniam mollitia in.
       message: bad request
     required:
     - code
@@ -492,8 +549,7 @@ definitions:
       data:
         type: object
         example:
-          Consequatur qui dolor.: Voluptatem corrupti reprehenderit.
-          Expedita veniam vel.: Aliquam perferendis.
+          Beatae dignissimos libero vel.: Rerum molestiae quo.
         additionalProperties: true
       message:
         type: string
@@ -502,8 +558,10 @@ definitions:
     example:
       code: 200
       data:
-        Aliquam quaerat molestiae accusamus voluptas aut iste.: Id sed quia placeat.
-        Voluptate ratione ipsa.: Non perferendis.
+        Distinctio numquam.: Qui enim in temporibus consequatur.
+        Qui repudiandae ullam voluptatibus aspernatur cupiditate.: Sed ut magni dolores
+          ipsam recusandae.
+        Sit quas debitis.: Ullam qui ducimus sint aut vel.
       message: bad request
     required:
     - code
@@ -513,9 +571,9 @@ definitions:
     properties:
       email:
         type: string
-        example: Expedita sapiente unde aspernatur voluptas.
+        example: Consequuntur et est quibusdam sed.
     example:
-      email: Alias quis et aut doloribus.
+      email: Molestiae tempora quibusdam.
     required:
     - email
   UserMethodSendVerifyCodeResponseBody:
@@ -530,8 +588,7 @@ definitions:
       data:
         type: object
         example:
-          Eius ad officia corrupti soluta qui voluptas.: Dolorem error qui.
-          Quibusdam delectus.: Qui optio aut dolor accusantium consequuntur qui.
+          Quia veniam.: Qui tempore dolor modi veritatis magnam iste.
         additionalProperties: true
       message:
         type: string
@@ -540,9 +597,11 @@ definitions:
     example:
       code: 200
       data:
-        A dolorum saepe eum hic.: Iste earum.
-        Ducimus sit officiis repudiandae laudantium dolorem.: Ea assumenda.
-        Quasi rerum accusamus quisquam.: Dolore aut consequatur.
+        Error soluta voluptatem eveniet autem.: Non ex temporibus.
+        Nam quaerat tempora debitis sed.: Voluptatum recusandae quae dignissimos esse
+          nam.
+        Quidem aut dignissimos quia cupiditate dolorum incidunt.: Eligendi ea nisi
+          dolorem.
       message: bad request
     required:
     - code
@@ -553,14 +612,14 @@ definitions:
       id:
         type: string
         description: ID of missing user
-        example: Repellat eum eius sit ratione ad qui.
+        example: Nulla et excepturi molestiae.
       message:
         type: string
         description: Message of error
         example: user 1 not found
     description: Bottle not found
     example:
-      id: Quis eos voluptatem dolor tenetur praesentium minus.
+      id: Optio impedit nobis.
       message: user 1 not found
     required:
     - message
@@ -569,10 +628,13 @@ definitions:
     title: 'Mediatype identifier: application/vnd.cellar.stored-bottle; view=default'
     type: object
     properties:
+      activate:
+        type: boolean
+        example: true
       email:
         type: string
         description: Vintage of bottle
-        example: 9i6
+        example: alw
         maxLength: 100
       icon:
         type: string
@@ -592,7 +654,8 @@ definitions:
         maxLength: 100
     description: ShowResponseBody result type (default view)
     example:
-      email: qwb
+      activate: true
+      email: mzi
       icon: Red wine blend with an emphasis on the Cabernet Franc grape and including
         other Bordeaux grape varietals and some Syrah
       id: 1

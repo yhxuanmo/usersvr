@@ -295,3 +295,34 @@ func DecodeSendVerifyCodeResponse(ctx context.Context, v interface{}, hdr, trlr 
 	res := NewSendVerifyCodeResult(message)
 	return res, nil
 }
+
+// BuildActivateFunc builds the remote method to invoke for "userMethod"
+// service "activate" endpoint.
+func BuildActivateFunc(grpccli user_methodpb.UserMethodClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
+	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
+		for _, opt := range cliopts {
+			opts = append(opts, opt)
+		}
+		return grpccli.Activate(ctx, reqpb.(*user_methodpb.ActivateRequest), opts...)
+	}
+}
+
+// EncodeActivateRequest encodes requests sent to userMethod activate endpoint.
+func EncodeActivateRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
+	payload, ok := v.(*usermethod.ActivatePayload)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("userMethod", "activate", "*usermethod.ActivatePayload", v)
+	}
+	return NewActivateRequest(payload), nil
+}
+
+// DecodeActivateResponse decodes responses from the userMethod activate
+// endpoint.
+func DecodeActivateResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	message, ok := v.(*user_methodpb.ActivateResponse)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("userMethod", "activate", "*user_methodpb.ActivateResponse", v)
+	}
+	res := NewActivateResult(message)
+	return res, nil
+}

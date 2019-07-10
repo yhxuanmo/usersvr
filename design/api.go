@@ -36,7 +36,7 @@ var UserInfo = ResultType("application/vnd.cellar.stored-bottle", func() {
 		Field(3, "email")
 		Field(4, "icon")
 		Field(5, "password")
-		//Field(6, "description")
+		Field(6, "activate", Boolean)
 		//Field(7, "rating")
 	})
 
@@ -45,6 +45,7 @@ var UserInfo = ResultType("application/vnd.cellar.stored-bottle", func() {
 		Attribute("name")
 		Attribute("email")
 		Attribute("icon")
+		Attribute("activate", Boolean)
 	})
 
 	View("changeInfo", func() {
@@ -98,6 +99,17 @@ var PasswordError = Type("PasswordError", func() {
 
 var EmailExist = Type("EmailExist", func() {
 	Description("EmailExist is the type returned when user register with the email that is existed")
+	Attribute("message", String, "Message of error", func() {
+		Meta("struct:error:name")
+		Example("email 123@email.com is existed")
+		Meta("rpc:tag", "1")
+	})
+	Field(2, "email", String, "email of user")
+	Required("message", "email")
+})
+
+var NotActivate = Type("NotActivate", func() {
+	Description("user is not activate")
 	Attribute("message", String, "Message of error", func() {
 		Meta("struct:error:name")
 		Example("email 123@email.com is existed")

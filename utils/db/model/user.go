@@ -8,4 +8,5 @@ type User struct {
 	Email 	 string  `gorm:"unique;not null"`
 	Password string  `gorm:"not null"`
 	Icon 	 string  `gorm:"type:varchar(100)"`
+	Activate bool 	 `gorm:"default:false"`
 }

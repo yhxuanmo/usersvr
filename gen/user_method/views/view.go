@@ -32,6 +32,7 @@ type UserInfoView struct {
 	// Description of bottle
 	Icon     *string
 	Password *string
+	Activate *bool
 }
 
 var (
@@ -43,6 +44,7 @@ var (
 			"name",
 			"email",
 			"icon",
+			"activate",
 		},
 		"changeInfo": []string{
 			"id",

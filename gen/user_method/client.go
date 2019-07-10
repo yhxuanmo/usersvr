@@ -23,10 +23,11 @@ type Client struct {
 	ForgotPasswordEndpoint goa.Endpoint
 	ChangeEmailEndpoint    goa.Endpoint
 	SendVerifyCodeEndpoint goa.Endpoint
+	ActivateEndpoint       goa.Endpoint
 }
 
 // NewClient initializes a "userMethod" service client given the endpoints.
-func NewClient(register, show, login, changeInfo, changePassword, forgotPassword, changeEmail, sendVerifyCode goa.Endpoint) *Client {
+func NewClient(register, show, login, changeInfo, changePassword, forgotPassword, changeEmail, sendVerifyCode, activate goa.Endpoint) *Client {
 	return &Client{
 		RegisterEndpoint:       register,
 		ShowEndpoint:           show,
@@ -36,6 +37,7 @@ func NewClient(register, show, login, changeInfo, changePassword, forgotPassword
 		ForgotPasswordEndpoint: forgotPassword,
 		ChangeEmailEndpoint:    changeEmail,
 		SendVerifyCodeEndpoint: sendVerifyCode,
+		ActivateEndpoint:       activate,
 	}
 }
 
@@ -131,6 +133,16 @@ func (c *Client) ChangeEmail(ctx context.Context, p *ChangeEmailPayload) (res *R
 func (c *Client) SendVerifyCode(ctx context.Context, p *SendVerifyCodePayload) (res *ResponseResult, err error) {
 	var ires interface{}
 	ires, err = c.SendVerifyCodeEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ResponseResult), nil
+}
+
+// Activate calls the "activate" endpoint of the "userMethod" service.
+func (c *Client) Activate(ctx context.Context, p *ActivatePayload) (res *ResponseResult, err error) {
+	var ires interface{}
+	ires, err = c.ActivateEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
